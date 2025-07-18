@@ -222,19 +222,16 @@ def fasta_neighbourhood_extract():
 
 def find_target_file(input_path: Path, target_name: str) -> Path:
     """Find target .gff file in input directory based on name of gene of interest"""
-    if input_path.is_dir():
-        matched_file = list(input_path.rglob(f"{target_name}*.gff*"))
+    matched_file = list(input_path.rglob(f"{target_name}*.gff*"))
 
-        if not matched_file:
-            raise FileNotFoundError(
-                f"Could not find target file with name: {target_name}."
-            )
+    if not matched_file:
+        raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
 
-        elif len(matched_file) > 1:
-            logging.warning(f"Multiple files named: {target_name}: {matched_file}")
-            logging.warning(f"Using first matched .gff file: {matched_file[0]}")
+    elif len(matched_file) > 1:
+        logging.warning(f"Multiple files named: {target_name}: {matched_file}")
+        logging.warning(f"Using first matched .gff file: {matched_file[0]}")
 
-        return matched_file[0]
+    return matched_file[0]
 
 
 def process_target_genes(args):
