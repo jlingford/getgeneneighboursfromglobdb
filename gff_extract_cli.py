@@ -12,6 +12,8 @@ Control flow:
 """
 
 # imports
+from ast import List
+from io import TextIOWrapper
 import os
 import re
 import sys
@@ -243,6 +245,11 @@ def extract_gene_neighbourhood(
         f"Extracted region ({window_start}-{window_end}) on {scaffold} written to: {outpath.name}"
     )
 
+    # match gene ID name contained within "ID="
+    gene_ids = gff_subset["attributes"].str.findall(r"ID=([^;]+)")
+    # create list of gene_ids from gene neighbourhood, getting them out of the nested list
+    gene_ids: list = [item for sublist in gene_ids for item in sublist]
+
     # plot gene neighbourhood figure
     gff_input_file = str(outpath)
     if args.no_plot is not True:
@@ -254,17 +261,17 @@ def extract_gene_neighbourhood(
     if args.fasta_path and args.fasta_path.is_dir():
         target_name = gene_name.split("___")[0]
         fasta_file = find_fasta_file(args.fasta_path, target_name)
-        fasta_neighbourhood_extract(args, gene_name, fasta_file, gff_subset)
+        fasta_neighbourhood_extract(args, gene_name, fasta_file, gene_ids)
     if args.fasta_path and args.fasta_path.is_file():
-        fasta_neighbourhood_extract(args, gene_name, args.fasta_path, gff_subset)
+        fasta_neighbourhood_extract(args, gene_name, args.fasta_path, gene_ids)
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
     if args.annotation_path and args.annotation_path.is_dir():
         target_name = gene_name.split("___")[0]
         anno_file = find_annotation_file(args.annotation_path, target_name)
-        annotation_extract(args, gene_name, anno_file, gff_subset)
+        annotation_extract(args, gene_name, anno_file, gene_ids)
     if args.annotation_path and args.annotation_path.is_file():
-        annotation_extract(args, gene_name, args.annotation_path, gff_subset)
+        annotation_extract(args, gene_name, args.annotation_path, gene_ids)
 
 
 def plot_gene_neighbourhood(
@@ -302,31 +309,45 @@ def plot_gene_neighbourhood(
 
 
 def fasta_neighbourhood_extract(
-    args: argparse.Namespace, gene_name: str, fasta_file: Path, gff_subset: pd.DataFrame
+    args: argparse.Namespace, gene_name: str, fasta_file: Path, gene_ids: list
 ) -> None:
     """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
-    # do stuff
+    # params
+    output_dir = args.output_dir
+    fasta_file = fasta_file
+    # fasta_file = "./data/AMXMAG_0088.faa"
+    gene_ids = gene_ids
+    gene_name = gene_name
+
+    # make output dir
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___neighbouring_genes.faa"
+    if outpath.exists():
+        logging.warning(f"Writing over existing fastas: {outpath.name}")
+    outpath.parent.mkdir(exist_ok=True, parents=True)
+
+    # find subset of fasta file based on gene neighbourhood ids
+    with open_fasta(fasta_file) as handle:
+        all_fastas = SeqIO.parse(handle, "fasta")
+        gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
+        with open(outpath, "w") as f:
+            SeqIO.write(gene_neighbours, f, "fasta")
 
 
 def annotation_extract(
     args: argparse.Namespace,
     gene_name: str,
     annotation_file: Path,
-    gff_subset: pd.DataFrame,
+    gene_ids: list,
 ) -> None:
     """Extract annotation info surrounding gene of interest and output to new .tsv"""
     # params
     output_dir = args.output_dir
-    gff_subset = gff_subset
+    gene_ids = gene_ids
     anno_file = annotation_file
     gene_name = gene_name
     anno = pd.read_csv(anno_file, delimiter="\t", compression="infer")
 
     # Reformat annotation table
-    # match gene ID name contained within "ID="
-    gene_ids = gff_subset["attributes"].str.findall(r"ID=([^;]+)")
-    # create list of gene_ids from gene neighbourhood, getting them out of the nested list
-    gene_ids = [item for sublist in gene_ids for item in sublist]
     # create subset of annotation table based on gene_ids list, and sorted based on gene_ids and evalues
     anno_subset = anno[anno["gene_callers_id"].isin(gene_ids)].sort_values(
         by=["gene_callers_id", "e_value"], ascending=[True, True]
@@ -347,7 +368,7 @@ def annotation_extract(
         }
     )
     # Save annotation table
-    outpath = Path(output_dir) / gene_name / f"{gene_name}_annotations.tsv"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___annotations.tsv"
     if outpath.exists():
         logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
@@ -378,6 +399,14 @@ def find_fasta_file(input_path: Path, target_name: str) -> Path:
         logging.warning(f"Multiple .faa files named: {target_name}: {matched_file}")
         logging.warning(f"Using first matched .faa file: {matched_file[0]}")
     return matched_file[0]
+
+
+def open_fasta(file_path: Path) -> TextIOWrapper:
+    """Open a fasta file that might be gzipped or plain text"""
+    if file_path.suffix == ".gz":
+        return gzip.open(file_path, "rt")  # open in text mode
+    else:
+        return open(file_path, "r")
 
 
 def find_annotation_file(input_path: Path, target_name: str) -> Path:
