@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """
 Extract and plot genetic neighbourhood around gene of interest
+
+Control flow:
+>main()
+    ↳ parse_arguments()
+    ↳ process_target_genes()
+        ↳ extract_gene_neighbourhood()
+            ↳ plot_gene_neighbourhood()
+        ↳ annotation_extract()
 """
 
 # imports
@@ -16,12 +24,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from Bio import SeqIO
+from BCBio import GFF
 from pathlib import Path
 import matplotlib.pyplot as plt
 import dna_features_viewer as dfv
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """Parse arguments to script"""
     parser = argparse.ArgumentParser(
         description=textwrap.dedent("""\
@@ -36,7 +45,7 @@ def parse_arguments():
             Examples:
             1) find gene neighbourhoods around a list of target genes, 5000 bp upstream, and 20,000 bp downstream of target genes. Plus add annotations:
 
-            python %(prog)s -d path/to/gff_files_dir -l target_genes.txt -o output_dir -U 5000 -D 20000 -a path/to/annotation_dir
+            python %(prog)s -d path/to/gff_files_dir -l target_genes.txt -o output_dir -U 5000 -D 20000 -a path/to/annotation_files
         """),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -109,7 +118,7 @@ def parse_arguments():
     parser.add_argument(
         "-a",
         "--annodir",
-        dest="annotation_dir",
+        dest="annotation_path",
         type=Path,
         required=False,
         metavar="DIR",
@@ -119,19 +128,42 @@ def parse_arguments():
     parser.add_argument(
         "-f",
         "--fastadir",
-        dest="fasta_dir",
+        dest="fasta_path",
         type=Path,
         required=False,
         metavar="DIR",
         help="Path to dir containing fasta files",
     )
 
+    parser.add_argument(
+        "--dpi",
+        dest="plot_dpi",
+        type=int,
+        default=300,
+        required=False,
+        metavar="INT",
+        help="Resolution of .png output plot in dpi [Default: 300]",
+    )
+
+    parser.add_argument(
+        "--plot-format",
+        dest="plot_format",
+        choices=["png", "pdf", "svg"],
+        default="png",
+        required=False,
+        metavar="STR",
+        help="File format for output plot. Choices = png, pdf, svg [Default: png]",
+    )
+
+    parser.add_argument(
+        "--no-plot",
+        dest="no_plot",
+        action="store_true",
+        help="Option to not output genetic neighbourhood plots [Default: off]",
+    )
+
     # Parse arguments into args object
     args = parser.parse_args()
-
-    # Validate arguments
-    # if not args.gff_path.is_file():
-    #     parser.error(f"Input file does not exist or is not a file: {args.input_dir}")
 
     # Info about input files
     if args.gff_path.is_file():
@@ -143,7 +175,9 @@ def parse_arguments():
     return args
 
 
-def extract_gene_neighbourhood(args, gene_name, gff_file):
+def extract_gene_neighbourhood(
+    args: argparse.Namespace, gene_name: str, gff_file: Path
+) -> None:
     """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
     # params
     gff_file = gff_file  # The input gff file
@@ -175,9 +209,8 @@ def extract_gene_neighbourhood(args, gene_name, gff_file):
     # Find gene of interest in .gff file
     # NOTE: hardcoded to look for ID=
     gene_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
-
     if gene_row.empty:
-        raise ValueError(f"Gene '{gene_name}' not found in GFF.")
+        raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
 
     # Get genetic neighbourhood coordinates to center on gene of interest
     gene_start = gene_row.iloc[0]["start"]
@@ -185,63 +218,188 @@ def extract_gene_neighbourhood(args, gene_name, gff_file):
     scaffold = gene_row.iloc[0]["seqid"]
 
     # Define window coordinates
-    window_start = max(gene_start - upstream_window, 0)
-    window_end = gene_end + downstream_window
+    window_start: int = max(gene_start - upstream_window, 0)
+    window_end: int = gene_end + downstream_window
 
     # Get subset of gff file based on window
-    subset = gff[
+    gff_subset = gff[
         (gff["seqid"] == scaffold)
         & (gff["start"] <= window_end)
         & (gff["end"] >= window_start)
     ]
 
     # Write output
-    outpath = Path(output_dir) / f"{gene_name}.gff"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}.gff"
     if outpath.exists():
         logging.warning(f"Writing over existing output .gff file: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
-    subset.to_csv(
+    gff_subset.to_csv(
         outpath,
         sep="\t",
         header=False,
         index=False,
     )
-
     print(
         f"Extracted region ({window_start}-{window_end}) on {scaffold} written to: {outpath.name}"
     )
 
+    # plot gene neighbourhood figure
+    gff_input_file = str(outpath)
+    if args.no_plot is not True:
+        plot_gene_neighbourhood(
+            args, gene_name, gff_input_file, window_start, window_end
+        )
 
-def plot_gene_neighbourhood():
-    """Stuff"""
+    # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
+    if args.fasta_path and args.fasta_path.is_dir():
+        target_name = gene_name.split("___")[0]
+        fasta_file = find_fasta_file(args.fasta_path, target_name)
+        fasta_neighbourhood_extract(args, gene_name, fasta_file, gff_subset)
+    if args.fasta_path and args.fasta_path.is_file():
+        fasta_neighbourhood_extract(args, gene_name, args.fasta_path, gff_subset)
+
+    # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
+    if args.annotation_path and args.annotation_path.is_dir():
+        target_name = gene_name.split("___")[0]
+        anno_file = find_annotation_file(args.annotation_path, target_name)
+        annotation_extract(args, gene_name, anno_file, gff_subset)
+    if args.annotation_path and args.annotation_path.is_file():
+        annotation_extract(args, gene_name, args.annotation_path, gff_subset)
 
 
-def fasta_neighbourhood_extract():
-    """Extract fasta seqs surrounding gene of interest and reformat for AlphaPulldown input"""
+def plot_gene_neighbourhood(
+    args: argparse.Namespace,
+    gene_name: str,
+    gff_input_file: str,
+    window_start: int,
+    window_end: int,
+) -> None:
+    """Plot the genetic neighbourhood around gene of interest using dna_features_viewer"""
+    # params
+    output_dir = args.output_dir
+    dpi = args.plot_dpi
+    format = args.plot_format
+    gene_name = gene_name
+    gff_input_file = gff_input_file
+    window_start = window_start
+    window_end = window_end
+
+    # plot genetic neighbourhood figure
+    record = dfv.BiopythonTranslator().translate_record(gff_input_file)
+    # set sequence length of record to avoid out of bounds error
+    record.sequence_length = max(window_end, record.sequence_length)
+    # crop plot to window
+    record = record.crop((window_start, window_end))
+    # plot figure
+    ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
+    ax.figure.tight_layout()
+    # save figure
+    outpath = Path(output_dir) / gene_name / f"{gene_name}.{format}"
+    if outpath.exists():
+        logging.warning(f"Writing over existing figure: {outpath.name}")
+    outpath.parent.mkdir(exist_ok=True, parents=True)
+    ax.figure.savefig(outpath, dpi=dpi, format=format)
+
+
+def fasta_neighbourhood_extract(
+    args: argparse.Namespace, gene_name: str, fasta_file: Path, gff_subset: pd.DataFrame
+) -> None:
+    """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
+    # do stuff
+
+
+def annotation_extract(
+    args: argparse.Namespace,
+    gene_name: str,
+    annotation_file: Path,
+    gff_subset: pd.DataFrame,
+) -> None:
+    """Extract annotation info surrounding gene of interest and output to new .tsv"""
+    # params
+    output_dir = args.output_dir
+    gff_subset = gff_subset
+    anno_file = annotation_file
+    gene_name = gene_name
+    anno = pd.read_csv(anno_file, delimiter="\t", compression="infer")
+
+    # Reformat annotation table
+    # match gene ID name contained within "ID="
+    gene_ids = gff_subset["attributes"].str.findall(r"ID=([^;]+)")
+    # create list of gene_ids from gene neighbourhood, getting them out of the nested list
+    gene_ids = [item for sublist in gene_ids for item in sublist]
+    # create subset of annotation table based on gene_ids list, and sorted based on gene_ids and evalues
+    anno_subset = anno[anno["gene_callers_id"].isin(gene_ids)].sort_values(
+        by=["gene_callers_id", "e_value"], ascending=[True, True]
+    )
+    # make dataframe of gene_ids to merge with annotation table later
+    gene_ids_df = pd.DataFrame({"gene_callers_id": gene_ids})
+    # Merge gene_ids df with annotation subset df
+    merged_with_missing = gene_ids_df.merge(
+        anno_subset, on="gene_callers_id", how="left"
+    )
+    # Fill in missing rows from merge with NaN
+    merged_filled = merged_with_missing.fillna(
+        {
+            "source": "-",
+            "accession": "-",
+            "function": "-",
+            "e_value": "-",
+        }
+    )
+    # Save annotation table
+    outpath = Path(output_dir) / gene_name / f"{gene_name}_annotations.tsv"
+    if outpath.exists():
+        logging.warning(f"Writing over existing figure: {outpath.name}")
+    outpath.parent.mkdir(exist_ok=True, parents=True)
+    merged_filled.to_csv(outpath, sep="\t", index=False)
 
 
 def find_target_file(input_path: Path, target_name: str) -> Path:
     """Find target .gff file in input directory based on name of gene of interest"""
     matched_file = list(input_path.rglob(f"{target_name}*.gff*"))
-
     if not matched_file:
         raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-
     elif len(matched_file) > 1:
         logging.warning(f"Multiple files named: {target_name}: {matched_file}")
         logging.warning(f"Using first matched .gff file: {matched_file[0]}")
-
     return matched_file[0]
 
 
-def process_target_genes(args):
-    """Stuff"""
+def find_fasta_file(input_path: Path, target_name: str) -> Path:
+    """Find target .faa (or .fasta) file in input directory based on name of gene of interest"""
+    matched_file = list(input_path.rglob(f"{target_name}*.faa*")) + list(
+        input_path.rglob(f"{target_name}*.fasta*")
+    )
+    if not matched_file:
+        raise FileNotFoundError(
+            f"Could not find target .faa file with name: {target_name}."
+        )
+    elif len(matched_file) > 1:
+        logging.warning(f"Multiple .faa files named: {target_name}: {matched_file}")
+        logging.warning(f"Using first matched .faa file: {matched_file[0]}")
+    return matched_file[0]
+
+
+def find_annotation_file(input_path: Path, target_name: str) -> Path:
+    """Find target annotation .tsv file in input directory based on name of gene of interest"""
+    matched_file = list(input_path.rglob(f"{target_name}*.tsv*"))
+    if not matched_file:
+        raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
+    elif len(matched_file) > 1:
+        logging.warning(
+            f"Multiple annotation files named: {target_name}: {matched_file}"
+        )
+        logging.warning(f"Using first matched .tsv file: {matched_file[0]}")
+    return matched_file[0]
+
+
+def process_target_genes(args: argparse.Namespace) -> None:
+    """Handles processing input depending on what arguments were parsed"""
     # Passing list of genes of interest with specific .gff target file
     if args.gene_list and args.gff_path.is_file():
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
-                # print(f"Finding gene neighbourhood around target gene: {gene_name}")
                 extract_gene_neighbourhood(args, gene_name, args.gff_path)
 
     # Passing list of genes of interest with general gff parent dir
@@ -267,6 +425,7 @@ def process_target_genes(args):
 
 
 def main():
+    """Handles broad control flow of all functions"""
     args = parse_arguments()
     process_target_genes(args)
 
