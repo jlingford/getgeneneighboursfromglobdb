@@ -164,6 +164,13 @@ def parse_arguments() -> argparse.Namespace:
         help="Option to not output genetic neighbourhood plots [Default: off]",
     )
 
+    parser.add_argument(
+        "--both-strands",
+        dest="both_strands",
+        action="store_true",
+        help="Option to include both strands of genetic neighbourhood in output, rather than only genetic neighbours on the same strand as the gene-of-interest. [Default: off]",
+    )
+
     # Parse arguments into args object
     args = parser.parse_args()
 
@@ -208,30 +215,39 @@ def extract_gene_neighbourhood(
         ],
     )
 
-    # Find gene of interest in .gff file
+    # Find gene of interest (GOI) in .gff file
     # NOTE: hardcoded to look for ID=
-    gene_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
-    if gene_row.empty:
+    goi_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
+    if goi_row.empty:
         raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
 
     # Get genetic neighbourhood coordinates to center on gene of interest
-    gene_start = gene_row.iloc[0]["start"]
-    gene_end = gene_row.iloc[0]["end"]
-    scaffold = gene_row.iloc[0]["seqid"]
+    goi_start = goi_row.iloc[0]["start"]
+    goi_end = goi_row.iloc[0]["end"]
+    goi_scaffold = goi_row.iloc[0]["seqid"]
+    goi_strand = goi_row.iloc[0]["strand"]
 
     # Define window coordinates
-    window_start: int = max(gene_start - upstream_window, 0)
-    window_end: int = gene_end + downstream_window
+    window_start: int = max(goi_start - upstream_window, 0)
+    window_end: int = goi_end + downstream_window
 
-    # Get subset of gff file based on window
-    gff_subset = gff[
-        (gff["seqid"] == scaffold)
-        & (gff["start"] <= window_end)
-        & (gff["end"] >= window_start)
-    ]
+    # Get subset of gff file based on window. Get only genes from same strand as GOI, unless specified otherwise
+    if args.both_strands is not True:
+        gff_subset = gff[
+            (gff["strand"] == goi_strand)
+            & (gff["seqid"] == goi_scaffold)
+            & (gff["start"] <= window_end)
+            & (gff["end"] >= window_start)
+        ]
+    else:
+        gff_subset = gff[
+            (gff["seqid"] == goi_scaffold)
+            & (gff["start"] <= window_end)
+            & (gff["end"] >= window_start)
+        ]
 
     # Write output
-    outpath = Path(output_dir) / gene_name / f"{gene_name}.gff"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___genetic_neighbourhood.gff"
     if outpath.exists():
         logging.warning(f"Writing over existing output .gff file: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
@@ -242,7 +258,7 @@ def extract_gene_neighbourhood(
         index=False,
     )
     print(
-        f"Extracted region ({window_start}-{window_end}) on {scaffold} written to: {outpath.name}"
+        f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {outpath.name}"
     )
 
     # match gene ID name contained within "ID="
@@ -301,7 +317,7 @@ def plot_gene_neighbourhood(
     ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
     ax.figure.tight_layout()
     # save figure
-    outpath = Path(output_dir) / gene_name / f"{gene_name}.{format}"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___plot.{format}"
     if outpath.exists():
         logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
@@ -315,12 +331,11 @@ def fasta_neighbourhood_extract(
     # params
     output_dir = args.output_dir
     fasta_file = fasta_file
-    # fasta_file = "./data/AMXMAG_0088.faa"
     gene_ids = gene_ids
     gene_name = gene_name
 
     # make output dir
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___neighbouring_genes.faa"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours.faa"
     if outpath.exists():
         logging.warning(f"Writing over existing fastas: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
@@ -404,7 +419,7 @@ def find_fasta_file(input_path: Path, target_name: str) -> Path:
 def open_fasta(file_path: Path) -> TextIOWrapper:
     """Open a fasta file that might be gzipped or plain text"""
     if file_path.suffix == ".gz":
-        return gzip.open(file_path, "rt")  # open in text mode
+        return gzip.open(file_path, "rt")
     else:
         return open(file_path, "r")
 
