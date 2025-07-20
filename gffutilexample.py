@@ -11,7 +11,7 @@ window = 10000  # Size of window upstream/downstream
 
 # --- Load GFF file into DataFrame ---
 gff = pd.read_csv(
-    gff_path,
+    data_dir,
     sep="\t",
     comment="#",
     header=None,
