@@ -15,6 +15,7 @@ Control flow:
 # TODO:
 # change -n to nargs=+
 # consolidate all -f -a -d into one option, -d, and make -f -a store_true options
+# add logging output to argparse function
 
 # imports
 from ast import List
@@ -64,7 +65,7 @@ def parse_arguments() -> argparse.Namespace:
 
     mutparse.add_argument(
         "-l",
-        "--genelist",
+        "--gene-list",
         dest="gene_list",
         type=Path,
         metavar="FILE",
@@ -73,7 +74,7 @@ def parse_arguments() -> argparse.Namespace:
 
     mutparse.add_argument(
         "-n",
-        "--name",
+        "--gene-name",
         dest="gene_name",
         type=str,
         metavar="STR",
@@ -83,8 +84,8 @@ def parse_arguments() -> argparse.Namespace:
     # Add individual arguments
     parser.add_argument(
         "-d",
-        "--gffdir",
-        dest="gff_path",
+        "--datadir",
+        dest="data_dir",
         type=Path,
         required=True,
         metavar="FILE|DIR",
@@ -126,25 +127,22 @@ def parse_arguments() -> argparse.Namespace:
 
     parser.add_argument(
         "-a",
-        "--annodir",
-        dest="annotation_path",
-        type=Path,
-        required=False,
-        metavar="DIR",
-        help="Path to dir containing annotation files",
+        "--add-annotation",
+        dest="add_annotation",
+        action="store_true",
+        help="Option to extract annotation table [Default: off]",
     )
 
     parser.add_argument(
         "-f",
-        "--fastadir",
-        dest="fasta_path",
-        type=Path,
-        required=False,
-        metavar="DIR",
+        "--add-fasta",
+        dest="add_fasta",
+        action="store_true",
         help="Path to dir containing fasta files",
     )
 
     parser.add_argument(
+        "-I",
         "--dpi",
         dest="plot_dpi",
         type=int,
@@ -155,6 +153,7 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "-F",
         "--plot-format",
         dest="plot_format",
         choices=["png", "pdf", "svg"],
@@ -165,6 +164,7 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "-N",
         "--no-plot",
         dest="no_plot",
         action="store_true",
@@ -172,6 +172,7 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "-B",
         "--both-strands",
         dest="both_strands",
         action="store_true",
@@ -180,8 +181,8 @@ def parse_arguments() -> argparse.Namespace:
 
     parser.add_argument(
         "-p",
-        "--pairwise-fastas",
-        dest="pairwise_fastas",
+        "--add-pairwise-fastas",
+        dest="add_pairwise_fastas",
         action="store_true",
         help="Option to generate fasta files containing pairwise combinations of all sequences in gene neighbourhood [Default: off]",
     )
@@ -198,11 +199,11 @@ def parse_arguments() -> argparse.Namespace:
     args = parser.parse_args()
 
     # Info about input files
-    if args.gff_path.is_file():
-        print(f"Input .gff file provided: {args.gff_path}")
+    if args.data_dir.is_file():
+        print(f"Input .gff file provided: {args.data_dir}")
 
-    if args.gff_path.is_dir():
-        print(f"Target dir for .gff files provided. Searching {args.gff_path}/...")
+    if args.data_dir.is_dir():
+        print(f"Target dir for .gff files provided. Searching {args.data_dir}/...")
 
     # Check arguments that depend on other arguments are valid:
     # ###
@@ -292,6 +293,8 @@ def extract_gene_neighbourhood(
     # create list of gene_ids from gene neighbourhood, getting them out of the nested list
     gene_ids: list = [item for sublist in gene_ids for item in sublist]
 
+    # Execute downstream functions, contigent on args:
+
     # plot gene neighbourhood figure
     gff_input_file = str(outpath)
     if args.no_plot is not True:
@@ -300,20 +303,16 @@ def extract_gene_neighbourhood(
         )
 
     # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
-    if args.fasta_path and args.fasta_path.is_dir():
+    if args.add_fasta is True:
         target_name = gene_name.split("___")[0]
-        fasta_file = find_fasta_file(args.fasta_path, target_name)
+        fasta_file = find_fasta_file(args.data_dir, target_name)
         fasta_neighbourhood_extract(args, gene_name, fasta_file, gene_ids)
-    if args.fasta_path and args.fasta_path.is_file():
-        fasta_neighbourhood_extract(args, gene_name, args.fasta_path, gene_ids)
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
-    if args.annotation_path and args.annotation_path.is_dir():
+    if args.add_annotation is True:
         target_name = gene_name.split("___")[0]
-        anno_file = find_annotation_file(args.annotation_path, target_name)
+        anno_file = find_annotation_file(args.data_dir, target_name)
         annotation_extract(args, gene_name, anno_file, gene_ids)
-    if args.annotation_path and args.annotation_path.is_file():
-        annotation_extract(args, gene_name, args.annotation_path, gene_ids)
 
 
 def plot_gene_neighbourhood(
@@ -374,7 +373,7 @@ def fasta_neighbourhood_extract(
             SeqIO.write(gene_neighbours, f, "fasta")
 
     # generate fasta pairwise combinations
-    if args.pairwise_fastas is True:
+    if args.add_pairwise_fastas is True:
         fasta_pairwise_generation(args, outpath, gene_name)
 
 
@@ -484,7 +483,7 @@ def annotation_extract(
     merged_filled.to_csv(outpath, sep="\t", index=False)
 
 
-def find_target_file(input_path: Path, target_name: str) -> Path:
+def find_gff_file(input_path: Path, target_name: str) -> Path:
     """Find target .gff file in input directory based on name of gene of interest"""
     matched_file = list(input_path.rglob(f"{target_name}*.gff*"))
     if not matched_file:
@@ -533,32 +532,20 @@ def find_annotation_file(input_path: Path, target_name: str) -> Path:
 
 def process_target_genes(args: argparse.Namespace) -> None:
     """Handles processing input depending on what arguments were parsed"""
-    # Passing list of genes of interest with specific .gff target file
-    if args.gene_list and args.gff_path.is_file():
-        with open(args.gene_list) as target_file:
-            for line in target_file:
-                gene_name = line.rstrip()
-                extract_gene_neighbourhood(args, gene_name, args.gff_path)
-
-    # Passing list of genes of interest with general gff parent dir
-    if args.gene_list and args.gff_path.is_dir():
+    # Case 1: Passing list of genes of interest with general gff parent dir
+    if args.gene_list and args.data_dir.is_dir():
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
                 target_name = gene_name.split("___")[0]
-                gff_file = find_target_file(args.gff_path, target_name)
+                gff_file = find_gff_file(args.data_dir, target_name)
                 extract_gene_neighbourhood(args, gene_name, gff_file)
 
-    # Passing singular gene of interest with specific .gff target file
-    if args.gene_name and args.gff_path.is_file():
-        gene_name = args.gene_name
-        extract_gene_neighbourhood(args, gene_name, args.gff_path)
-
-    # Passing singular gene of interest with general gff parent dir
-    if args.gene_name and args.gff_path.is_dir():
+    # Case 2: Passing singular gene of interest with general gff parent dir
+    if args.gene_name and args.data_dir.is_dir():
         gene_name = args.gene_name
         target_name = gene_name.split("___")[0]
-        gff_file = find_target_file(args.gff_path, target_name)
+        gff_file = find_gff_file(args.data_dir, target_name)
         extract_gene_neighbourhood(args, gene_name, gff_file)
 
 
