@@ -12,6 +12,9 @@ Control flow:
                 ↳ fasta_pairwise_generation()
         ↳ annotation_extract()
 """
+# TODO:
+# change -n to nargs=+
+# consolidate all -f -a -d into one option, -d, and make -f -a store_true options
 
 # imports
 from ast import List
@@ -551,7 +554,7 @@ def process_target_genes(args: argparse.Namespace) -> None:
         gene_name = args.gene_name
         extract_gene_neighbourhood(args, gene_name, args.gff_path)
 
-    # Passing singular genes of interest with general gff parent dir
+    # Passing singular gene of interest with general gff parent dir
     if args.gene_name and args.gff_path.is_dir():
         gene_name = args.gene_name
         target_name = gene_name.split("___")[0]
