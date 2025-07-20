@@ -8,6 +8,8 @@ Control flow:
     ↳ process_target_genes()
         ↳ extract_gene_neighbourhood()
             ↳ plot_gene_neighbourhood()
+            ↳ fasta_neighbourhood_extract()
+                ↳ fasta_pairwise_generation()
         ↳ annotation_extract()
 """
 
@@ -25,11 +27,13 @@ import textwrap
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from Bio import SeqIO
 from BCBio import GFF
 from pathlib import Path
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 import matplotlib.pyplot as plt
 import dna_features_viewer as dfv
+from itertools import combinations_with_replacement
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -171,6 +175,22 @@ def parse_arguments() -> argparse.Namespace:
         help="Option to include both strands of genetic neighbourhood in output, rather than only genetic neighbours on the same strand as the gene-of-interest. [Default: off]",
     )
 
+    parser.add_argument(
+        "-p",
+        "--pairwise-fastas",
+        dest="pairwise_fastas",
+        action="store_true",
+        help="Option to generate fasta files containing pairwise combinations of all sequences in gene neighbourhood [Default: off]",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--chai-fastas",
+        dest="chai_fastas",
+        action="store_true",
+        help="Option to prepend fasta ID headers with '>protein|' for Chai-1 input [Default: off]",
+    )
+
     # Parse arguments into args object
     args = parser.parse_args()
 
@@ -180,6 +200,9 @@ def parse_arguments() -> argparse.Namespace:
 
     if args.gff_path.is_dir():
         print(f"Target dir for .gff files provided. Searching {args.gff_path}/...")
+
+    # Check arguments that depend on other arguments are valid:
+    # ###
 
     return args
 
@@ -346,6 +369,74 @@ def fasta_neighbourhood_extract(
         gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
         with open(outpath, "w") as f:
             SeqIO.write(gene_neighbours, f, "fasta")
+
+    # generate fasta pairwise combinations
+    if args.pairwise_fastas is True:
+        fasta_pairwise_generation(args, outpath, gene_name)
+
+
+def fasta_pairwise_generation(
+    args: argparse.Namespace, input_fasta: Path, goi_name: str
+) -> None:
+    """Generate multiple fasta files containing pairwise combinations of all gene gene_neighbours"""
+    # params
+    output_dir = args.output_dir
+    target_id = goi_name
+    input_fasta = input_fasta
+
+    # Read all sequences into a list (records)
+    records = list(SeqIO.parse(input_fasta, "fasta"))
+
+    # define local function for finding absolute difference between GOI and neighbouring genes based on GlobDB fasta ID number
+    def dist_from_goi(record: SeqRecord):
+        goi_num = int(target_id.split("___")[1])
+        neighbour_num = int(record.id.split("___")[1])
+        return abs(neighbour_num - goi_num)
+
+    # sort all fasta records by the dist_from_goi function
+    sorted_records = sorted(records, key=dist_from_goi)
+
+    # Modify fasta header IDs of sorted_records for Chai-1 input, using the SeqRecord function
+    if args.chai_fastas is True:
+        seq_records = [
+            SeqRecord(
+                seq=record.seq,
+                name=record.id,
+                id=f"protein|{record.id}",
+                description="",
+            )
+            for record in sorted_records
+        ]
+    else:
+        seq_records = sorted_records
+
+    # generate fasta pairs using itertools
+    pairs = combinations_with_replacement(seq_records, 2)
+    for i, (rec1, rec2) in enumerate(pairs, start=1):
+        # Check if target is in this pair
+        includes_target = target_id in {rec1.name, rec2.name}
+        assert isinstance(rec1.name, str)
+        assert isinstance(rec2.name, str)
+
+        # get gene names to write new file names
+        genome = rec1.name.split("___")[0]
+        gene1 = rec1.name.split("___")[1]
+        gene2 = rec2.name.split("___")[1]
+
+        # Build output file name
+        if includes_target:
+            fname = f"{i:03d}_{genome}___{gene1}-{gene2}_geneofinterest.faa"
+        else:
+            fname = f"{i:03d}_{genome}___{gene1}-{gene2}.faa"
+
+        # make output dir
+        outpath = Path(output_dir) / target_id / f"Fasta_pairs_{target_id}" / fname
+        if outpath.exists():
+            logging.warning(f"Writing over existing fastas: {outpath.name}")
+        outpath.parent.mkdir(exist_ok=True, parents=True)
+
+        # Write the pairwise fasta file
+        SeqIO.write([rec1, rec2], outpath, "fasta")
 
 
 def annotation_extract(
