@@ -1,0 +1,75 @@
+gene_callers_id	source	accession	function	e_value
+AMXMAG_0088___3598	Pfam	PF07238.18	PilZ domain	2.9e-13
+AMXMAG_0088___3600	KOfam	K02078	acyl carrier protein	1.5000000000000002e-22
+AMXMAG_0088___3600	COG20_FUNCTION	COG0236	Acyl carrier protein (AcpP) (PDB:1ACP)	2.22e-19
+AMXMAG_0088___3600	Pfam	PF00550.29	Phosphopantetheine attachment site	4.7e-11
+AMXMAG_0088___3601	KOfam	K00059	3-oxoacyl-[acyl-carrier protein] reductase [EC:1.1.1.100]	2.6e-94
+AMXMAG_0088___3601	COG20_FUNCTION	COG1028	NAD(P)-dependent dehydrogenase, short-chain alcohol dehydrogenase family (FabG) (PDB:6L1H)	1.23e-72
+AMXMAG_0088___3601	Pfam	PF13561.10	Enoyl-(Acyl carrier protein) reductase	3.9000000000000004e-64
+AMXMAG_0088___3601	Pfam	PF00106.29	short chain dehydrogenase	9.200000000000001e-59
+AMXMAG_0088___3601	Pfam	PF08659.14	KR domain	8.9e-21
+AMXMAG_0088___3602	COG20_FUNCTION	COG0331	Malonyl CoA-acyl carrier protein transacylase (FabD) (PDB:1YXC)	1.3400000000000002e-35
+AMXMAG_0088___3602	Pfam	PF00698.25	Acyl transferase domain	1.4000000000000002e-22
+AMXMAG_0088___3603	COG20_FUNCTION	COG0726	Peptidoglycan/xylan/chitin deacetylase, PgdA/NodB/CDA1 family (CDA1) (PDB:1NY1)	2.05e-64
+AMXMAG_0088___3603	KOfam	K22278	peptidoglycan-N-acetylglucosamine deacetylase [EC:3.5.1.104]	6.699999999999999e-26
+AMXMAG_0088___3603	Pfam	PF11959.12	Domain of unknown function (DUF3473)	1.6e-21
+AMXMAG_0088___3603	Pfam	PF01522.25	Polysaccharide deacetylase	1.5e-19
+AMXMAG_0088___3603	CAZyme	-	CE4.hmm	1.7e-19
+AMXMAG_0088___3604	COG20_FUNCTION	COG0463	Glycosyltransferase involved in cell wall bisynthesis (WcaA) (PDB:5MLZ)	9.41e-47
+AMXMAG_0088___3604	Pfam	PF00535.30	Glycosyl transferase family 2	2.1999999999999997e-25
+AMXMAG_0088___3604	CAZyme	PF00535.25	GT2_Glycos_transf_2.hmm	5.3999999999999994e-24
+AMXMAG_0088___3604	CAZyme	-	GT81.hmm	1.9e-14
+AMXMAG_0088___3604	Pfam	PF13641.10	Glycosyltransferase like family 2	6.2e-09
+AMXMAG_0088___3605	KOfam	K00330	NADH-quinone oxidoreductase subunit A [EC:7.1.1.2]	1.2e-42
+AMXMAG_0088___3605	COG20_FUNCTION	COG0838	NADH:ubiquinone oxidoreductase subunit 3 (chain A) (NuoA) (PDB:3RKO)	1.6500000000000002e-31
+AMXMAG_0088___3605	Pfam	PF00507.23	NADH-ubiquinone/plastoquinone oxidoreductase, chain 3	2.2e-31
+AMXMAG_0088___3606	KOfam	K00334	NADH-quinone oxidoreductase subunit E [EC:7.1.1.2]	2.7999999999999997e-63
+AMXMAG_0088___3606	Pfam	PF01257.23	Thioredoxin-like [2Fe-2S] ferredoxin	7.4e-52
+AMXMAG_0088___3606	COG20_FUNCTION	COG1905	NADH:ubiquinone oxidoreductase 24 kD subunit (chain E) (NuoE) (PDB:5XF9)	2.16e-47
+AMXMAG_0088___3607	KOfam	K00335	NADH-quinone oxidoreductase subunit F [EC:7.1.1.2]	2.7000000000000003e-196
+AMXMAG_0088___3607	COG20_FUNCTION	COG1894	NADH:ubiquinone oxidoreductase, NADH-binding 51 kD subunit (chain F) (NuoF) (PDB:2FUG)	5.339999999999999e-165
+AMXMAG_0088___3607	Pfam	PF01512.21	Respiratory-chain NADH dehydrogenase 51 Kd subunit	5.8e-51
+AMXMAG_0088___3607	Pfam	PF10589.13	NADH-ubiquinone oxidoreductase-F iron-sulfur binding region	6.800000000000001e-32
+AMXMAG_0088___3607	Pfam	PF10531.13	SLBB domain	7.8e-12
+AMXMAG_0088___3608	COG20_FUNCTION	COG1034	NADH dehydrogenase/NADH:ubiquinone oxidoreductase 75 kD subunit (chain G) (NuoG) (PDB:1C4A)	7.38e-114
+AMXMAG_0088___3608	Pfam	PF13510.10	2Fe-2S iron-sulfur cluster binding domain	8.599999999999999e-24
+AMXMAG_0088___3608	Pfam	PF10588.13	NADH-ubiquinone oxidoreductase-G iron-sulfur binding region	9.3e-17
+AMXMAG_0088___3608	Pfam	PF00384.26	Molybdopterin oxidoreductase	6.9e-13
+AMXMAG_0088___3608	Pfam	PF00111.31	2Fe-2S iron-sulfur cluster binding domain	1.8e-11
+AMXMAG_0088___3609	KOfam	K00337	NADH-quinone oxidoreductase subunit H [EC:7.1.1.2]	1.1000000000000001e-149
+AMXMAG_0088___3609	Pfam	PF00146.25	NADH dehydrogenase	1.7000000000000002e-118
+AMXMAG_0088___3609	COG20_FUNCTION	COG1005	NADH:ubiquinone oxidoreductase subunit 1 (chain H) (NuoH) (PDB:6HUM)	8.2799999999999995e-112
+AMXMAG_0088___3610	KOfam	K00339	NADH-quinone oxidoreductase subunit J [EC:7.1.1.2]	2.7e-49
+AMXMAG_0088___3610	Pfam	PF00499.24	NADH-ubiquinone/plastoquinone oxidoreductase chain 6	3e-38
+AMXMAG_0088___3610	COG20_FUNCTION	COG0839	NADH:ubiquinone oxidoreductase subunit 6 (chain J) (NuoJ) (PDB:4HE8)	8.48e-26
+AMXMAG_0088___3611	KOfam	K00340	NADH-quinone oxidoreductase subunit K [EC:7.1.1.2]	3.2e-40
+AMXMAG_0088___3611	Pfam	PF00420.28	NADH-ubiquinone/plastoquinone oxidoreductase chain 4L	3.8e-31
+AMXMAG_0088___3611	COG20_FUNCTION	COG0713	NADH:ubiquinone oxidoreductase subunit 11 or 4L (chain K) (NuoK) (PDB:4HE8)	3.7200000000000003e-29
+AMXMAG_0088___3612	KOfam	K00341	NADH-quinone oxidoreductase subunit L [EC:7.1.1.2]	2.6e-228
+AMXMAG_0088___3612	COG20_FUNCTION	COG1009	Membrane H+-translocase/NADH:ubiquinone oxidoreductase subunit 5 (chain L)/Multisubunit Na+/H+ antiporter, MnhA subunit (NuoL) (PDB:3RKO)	2.32e-201
+AMXMAG_0088___3612	Pfam	PF00361.24	Proton-conducting membrane transporter	2.2e-86
+AMXMAG_0088___3612	Pfam	PF00662.24	NADH-Ubiquinone oxidoreductase (complex I), chain 5 N-terminus	4.8e-21
+AMXMAG_0088___3612	Pfam	PF01010.23	NADH-dehyrogenase subunit F, TMs, (complex I) C-terminus	1.1e-09
+AMXMAG_0088___3613	KOfam	K00342	NADH-quinone oxidoreductase subunit M [EC:7.1.1.2]	4.3000000000000005e-201
+AMXMAG_0088___3613	COG20_FUNCTION	COG1008	NADH:ubiquinone oxidoreductase subunit 4 (chain M) (NuoM) (PDB:6HUM)	1.95e-164
+AMXMAG_0088___3613	Pfam	PF00361.24	Proton-conducting membrane transporter	3.4000000000000004e-74
+AMXMAG_0088___3614	KOfam	K00343	NADH-quinone oxidoreductase subunit N [EC:7.1.1.2]	3.6e-139
+AMXMAG_0088___3614	COG20_FUNCTION	COG1007	NADH:ubiquinone oxidoreductase subunit 2 (chain N) (NuoN) (PDB:4HE8)	4.84e-97
+AMXMAG_0088___3614	Pfam	PF00361.24	Proton-conducting membrane transporter	3.2e-69
+AMXMAG_0088___3615	KOfam	K01926	redox-sensing transcriptional repressor	2.5000000000000003e-72
+AMXMAG_0088___3615	COG20_FUNCTION	COG2344	NADH/NAD ratio-sensing transcriptional regulator Rex (Rex) (PDB:3KEO) (PUBMED:23490197)	2.73e-51
+AMXMAG_0088___3615	Pfam	PF02629.23	CoA binding domain	2.8e-18
+AMXMAG_0088___3615	Pfam	PF06971.17	Putative DNA-binding protein N-terminus	5.9e-14
+AMXMAG_0088___3616	KOfam	K02003	putative ABC transport system ATP-binding protein	2.1e-108
+AMXMAG_0088___3616	COG20_FUNCTION	COG1136	ABC-type lipoprotein export system, ATPase component (LolD) (PDB:5GKO)	1.54e-106
+AMXMAG_0088___3616	Pfam	PF00005.31	ABC transporter	1.1e-37
+AMXMAG_0088___3616	Pfam	PF13304.10	AAA domain, putative AbiEii toxin, Type IV TA system	6.6e-08
+AMXMAG_0088___3617	Pfam	PF04893.21	Yip1 domain	7.9e-14
+AMXMAG_0088___3618	KOfam	K12340	outer membrane protein	8.8e-82
+AMXMAG_0088___3618	COG20_FUNCTION	COG1538	Outer membrane protein TolC (TolC) (PDB:1EK9)	1.6699999999999999e-52
+AMXMAG_0088___3618	Pfam	PF02321.22	Outer membrane efflux protein	7e-48
+AMXMAG_0088___3619	KOfam	K02032	peptide/nickel transport system ATP-binding protein	2e-136
+AMXMAG_0088___3619	COG20_FUNCTION	COG4608	ABC-type oligopeptide transport system, ATPase component (AppF)	1.94e-91
+AMXMAG_0088___3619	Pfam	PF00005.31	ABC transporter	4.7e-35
+AMXMAG_0088___3619	Pfam	PF08352.16	Oligopeptide/dipeptide transporter, C-terminal region	8.9e-18
+AMXMAG_0088___3619	Pfam	PF13401.10	AAA domain	2.9e-08
