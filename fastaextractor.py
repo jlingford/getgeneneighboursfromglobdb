@@ -32,15 +32,15 @@ gff = pd.read_csv(
 
 # --- Find the gene of interest by Name=... ---
 # You can adjust the attribute search here if needed (e.g., ID=...)
-gene_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
+goi_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
 
-if gene_row.empty:
+if goi_row.empty:
     raise ValueError(f"Gene '{gene_name}' not found in GFF.")
 
 # --- Get region coordinates ---
-gene_start = gene_row.iloc[0]["start"]
-gene_end = gene_row.iloc[0]["end"]
-chrom = gene_row.iloc[0]["seqid"]
+gene_start = goi_row.iloc[0]["start"]
+gene_end = goi_row.iloc[0]["end"]
+chrom = goi_row.iloc[0]["seqid"]
 
 window_start = max(gene_start - window, 0)
 window_end = gene_end + window
@@ -87,3 +87,49 @@ with gzip.open(fasta_file, "rt") as handle:
 #     fasta_subset[gene_id] for gene_id in gene_ids if gene_id in fasta_subset
 # ]
 # print(gene_neighbours)
+
+
+########################################################################
+
+# fasta pairwise generator for Chai-1 input
+
+from itertools import combinations_with_replacement
+from pathlib import Path
+
+
+def generate_pairwise_fastas(input_fasta: Path, output_dir: Path, target_id: str):
+    # Read all sequences
+    records = list(SeqIO.parse(input_fasta, "fasta"))
+
+    # Build a dictionary for quick access by ID (optional, if you want)
+    id_to_record = {record.id: record for record in records}
+
+    # Generate all pairwise combinations (with replacement)
+    pairs = combinations_with_replacement(records, 2)
+
+    for i, (rec1, rec2) in enumerate(pairs, start=1):
+        # Check if target is in this pair
+        includes_target = target_id in {rec1.id, rec2.id}
+
+        # Build output file name
+        if includes_target:
+            fname = f"pair_{i}_{target_id}_target.fasta"
+        else:
+            fname = f"pair_{i}.fasta"
+
+        output_file = output_dir / fname
+
+        # Write the pair
+        SeqIO.write([rec1, rec2], output_file, "fasta")
+
+
+# Example usage
+input_fasta = Path(
+    "./output/test2/AMXMAG_0088___3611/AMXMAG_0088___3611___gene_neighbours.faa"
+)
+gene_name = "AMXMAG_0088___3611"
+output_dir = "./output/test3"
+output_dir = Path(output_dir) / gene_name
+output_dir.mkdir(parents=True, exist_ok=True)
+
+generate_pairwise_fastas(input_fasta, output_dir, gene_name)

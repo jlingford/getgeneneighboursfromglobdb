@@ -30,15 +30,15 @@ gff = pd.read_csv(
 
 # --- Find the gene of interest by Name=... ---
 # You can adjust the attribute search here if needed (e.g., ID=...)
-gene_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
+goi_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
 
-if gene_row.empty:
+if goi_row.empty:
     raise ValueError(f"Gene '{gene_name}' not found in GFF.")
 
 # --- Get region coordinates ---
-gene_start = gene_row.iloc[0]["start"]
-gene_end = gene_row.iloc[0]["end"]
-chrom = gene_row.iloc[0]["seqid"]
+gene_start = goi_row.iloc[0]["start"]
+gene_end = goi_row.iloc[0]["end"]
+chrom = goi_row.iloc[0]["seqid"]
 
 window_start = max(gene_start - window, 0)
 window_end = gene_end + window

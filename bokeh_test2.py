@@ -30,16 +30,16 @@ gff = pd.read_csv(
 )
 
 # Find the gene by Name= or ID= (adjust as needed)
-gene_row = gff[
+goi_row = gff[
     gff["attributes"].str.contains(f"Name={gene_name}|ID={gene_name}", na=False)
 ]
 
-if gene_row.empty:
+if goi_row.empty:
     raise ValueError(f"Gene '{gene_name}' not found in {gff_file}")
 
 
-gene_start = gene_row.iloc[0]["start"]
-gene_end = gene_row.iloc[0]["end"]
+gene_start = goi_row.iloc[0]["start"]
+gene_end = goi_row.iloc[0]["end"]
 crop_start = gene_start - window
 crop_end = gene_end + window
 
