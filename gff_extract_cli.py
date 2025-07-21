@@ -14,7 +14,6 @@ Control flow:
 """
 # TODO:
 # change -n to nargs=+
-# consolidate all -f -a -d into one option, -d, and make -f -a store_true options
 # add logging output to argparse function
 
 # imports
@@ -36,7 +35,7 @@ from pathlib import Path
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import matplotlib.pyplot as plt
-import dna_features_viewer as dfv
+from dna_features_viewer import BiopythonTranslator
 from itertools import combinations_with_replacement
 
 
@@ -327,20 +326,40 @@ def plot_gene_neighbourhood(
     output_dir = args.output_dir
     dpi = args.plot_dpi
     format = args.plot_format
-    gene_name = gene_name
+    target_gene_id = gene_name.split("___")[1]
     gff_input_file = gff_input_file
     window_start = window_start
     window_end = window_end
+    # WARN: annotation code list is hardcoded... change that
+    # TODO: provide a way to update this list from CLI args
+    anno_code_list = ["COG1008", "COG1009"]
 
-    # plot genetic neighbourhood figure
-    record = dfv.BiopythonTranslator().translate_record(gff_input_file)
+    # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
+    class CustomTranslator(BiopythonTranslator):
+        def compute_feature_color(self, feature):
+            # Color the target gene green, annotation matches blue, and all others grey
+            if "ID" in feature.qualifiers:
+                gene_id = feature.qualifiers["ID"][0]
+                if "Name" in feature.qualifiers:
+                    gene_anno = feature.qualifiers["Name"][0]
+                    if gene_anno in anno_code_list:
+                        return "#89b4fa"
+                gene_id = gene_id.split("___")[1]
+                if target_gene_id == gene_id:
+                    return "#a6e3a1"
+            return "#cdd6f4"
+
+    # plot genetic neighbourhood figure, using CustomTranslator
+    record = CustomTranslator().translate_record(gff_input_file)
     # set sequence length of record to avoid out of bounds error
     record.sequence_length = max(window_end, record.sequence_length)
     # crop plot to window
     record = record.crop((window_start, window_end))
+
     # plot figure
     ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
     ax.figure.tight_layout()
+
     # save figure
     outpath = Path(output_dir) / gene_name / f"{gene_name}___plot.{format}"
     if outpath.exists():
