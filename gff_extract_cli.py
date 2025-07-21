@@ -332,9 +332,14 @@ def plot_gene_neighbourhood(
     window_end = window_end
     # WARN: annotation code list is hardcoded... change that
     # TODO: provide a way to update this list from CLI args
-    anno_code_list = ["COG1008", "COG1009"]
+    anno_code_list = [
+        "COG3259",
+        "COG1941",
+        "COG1908",
+    ]  # These are the FrhA, FrhG, FrhD subunits respectively for NiFe hydrogenase
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
+    # TODO: update this with more colours/options
     class CustomTranslator(BiopythonTranslator):
         def compute_feature_color(self, feature):
             # Color the target gene green, annotation matches blue, and all others grey
