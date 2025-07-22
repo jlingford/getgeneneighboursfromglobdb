@@ -332,11 +332,21 @@ def plot_gene_neighbourhood(
     window_end = window_end
     # WARN: annotation code list is hardcoded... change that
     # TODO: provide a way to update this list from CLI args
-    anno_code_list = [
+    anno_codes_targets = [
+        "COG0374",
         "COG3259",
-        "COG1941",
+        "COG4042",
+    ]  # annotation codes associated with NiFe LSU
+    anno_codes_neighbours_close = [
+        "COG1035",
+        "COG1740",
         "COG1908",
-    ]  # These are the FrhA, FrhG, FrhD subunits respectively for NiFe hydrogenase
+        "COG1941",
+    ]  # annotation codes associated with NiFe SSU & FrhD/MvhD
+    anno_codes_neighbours_other = [
+        "COG5557",  # membrane subunit HybB
+        "COG3658",  # cytochrome b
+    ]
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
     # TODO: update this with more colours/options
@@ -345,13 +355,20 @@ def plot_gene_neighbourhood(
             # Color the target gene green, annotation matches blue, and all others grey
             if "ID" in feature.qualifiers:
                 gene_id = feature.qualifiers["ID"][0]
+                gene_id = gene_id.split("___")[1]
                 if "Name" in feature.qualifiers:
                     gene_anno = feature.qualifiers["Name"][0]
-                    if gene_anno in anno_code_list:
+                    # colour genes that match annotations of familiar neighbours blue
+                    if gene_anno in anno_codes_neighbours_other:
+                        return "#cba6f7"
+                    if gene_anno in anno_codes_neighbours_close:
                         return "#89b4fa"
-                gene_id = gene_id.split("___")[1]
+                    # colour expected target with correct annotation as green
+                    if gene_anno in anno_codes_targets:
+                        return "#a6e3a1"
+                # colour target gene red if it doesn't match anything else
                 if target_gene_id == gene_id:
-                    return "#a6e3a1"
+                    return "#f38ba8"
             return "#cdd6f4"
 
     # plot genetic neighbourhood figure, using CustomTranslator
@@ -362,6 +379,7 @@ def plot_gene_neighbourhood(
     record = record.crop((window_start, window_end))
 
     # plot figure
+    fig, ax = plt.subplots()
     ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
     ax.figure.tight_layout()
 
@@ -371,6 +389,8 @@ def plot_gene_neighbourhood(
         logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
     ax.figure.savefig(outpath, dpi=dpi, format=format)
+    # close figure to avoid memory issues
+    plt.close("all")
 
 
 def fasta_neighbourhood_extract(
