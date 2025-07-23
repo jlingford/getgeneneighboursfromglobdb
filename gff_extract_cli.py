@@ -271,6 +271,15 @@ def extract_gene_neighbourhood(
             & (gff["start"] <= window_end)
             & (gff["end"] >= window_start)
         ]
+    # get subset of gff without maturation genes, for smaller fasta file extraction
+    # TODO: incorporate this function in a smarter way:
+    gff_subset_nomaturation = gff[
+        (gff["strand"] == goi_strand)
+        & (gff["seqid"] == goi_scaffold)
+        & (gff["start"] <= window_end)
+        & (gff["end"] >= window_start)
+        & (~gff["attributes"].str.contains("maturation", na=False))
+    ]
 
     # Write output
     outpath = Path(output_dir) / gene_name / f"{gene_name}___genetic_neighbourhood.gff"
@@ -292,6 +301,15 @@ def extract_gene_neighbourhood(
     # create list of gene_ids from gene neighbourhood, getting them out of the nested list
     gene_ids: list = [item for sublist in gene_ids for item in sublist]
 
+    # get subset of gff without maturation genes, for smaller fasta file extraction
+    # TODO: incorporate this function in a smarter way:
+    gene_ids_nomaturation = gff_subset_nomaturation["attributes"].str.findall(
+        r"ID=([^;]+)"
+    )
+    gene_ids_nomaturation: list = [
+        item for sublist in gene_ids_nomaturation for item in sublist
+    ]
+
     # Execute downstream functions, contigent on args:
 
     # plot gene neighbourhood figure
@@ -305,7 +323,10 @@ def extract_gene_neighbourhood(
     if args.add_fasta is True:
         target_name = gene_name.split("___")[0]
         fasta_file = find_fasta_file(args.data_dir, target_name)
-        fasta_neighbourhood_extract(args, gene_name, fasta_file, gene_ids)
+        # NOTE: adding the gene IDs list without maturation genes
+        fasta_neighbourhood_extract(
+            args, gene_name, fasta_file, gene_ids, gene_ids_nomaturation
+        )
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
     if args.add_annotation is True:
@@ -336,16 +357,19 @@ def plot_gene_neighbourhood(
         "COG0374",
         "COG3259",
         "COG4042",
+        "COG3261",
     ]  # annotation codes associated with NiFe LSU
     anno_codes_neighbours_close = [
         "COG1035",
         "COG1740",
         "COG1908",
         "COG1941",
+        "COG3260",
     ]  # annotation codes associated with NiFe SSU & FrhD/MvhD
     anno_codes_neighbours_other = [
         "COG5557",  # membrane subunit HybB
         "COG3658",  # cytochrome b
+        "COG1969",  # HyaC cytochrome b
     ]
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
@@ -366,6 +390,10 @@ def plot_gene_neighbourhood(
                     # colour expected target with correct annotation as green
                     if gene_anno in anno_codes_targets:
                         return "#a6e3a1"
+                if "product" in feature.qualifiers:
+                    gene_desc = feature.qualifiers["product"][0]
+                    if "maturation" in gene_desc:
+                        return "#f9e2af"
                 # colour target gene red if it doesn't match anything else
                 if target_gene_id == gene_id:
                     return "#f38ba8"
@@ -394,13 +422,18 @@ def plot_gene_neighbourhood(
 
 
 def fasta_neighbourhood_extract(
-    args: argparse.Namespace, gene_name: str, fasta_file: Path, gene_ids: list
+    args: argparse.Namespace,
+    gene_name: str,
+    fasta_file: Path,
+    gene_ids_full: list,
+    gene_ids_subset: list,
 ) -> None:
     """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
     # params
     output_dir = args.output_dir
     fasta_file = fasta_file
-    gene_ids = gene_ids
+    gene_ids = gene_ids_full
+    gene_ids_subset = gene_ids_subset
     gene_name = gene_name
 
     # make output dir
@@ -416,9 +449,29 @@ def fasta_neighbourhood_extract(
         with open(outpath, "w") as f:
             SeqIO.write(gene_neighbours, f, "fasta")
 
-    # generate fasta pairwise combinations
+    # Do the same for subset of fasta list
+    # make output dir
+    outpath2 = (
+        Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours_subset.faa"
+    )
+    if outpath2.exists():
+        logging.warning(f"Writing over existing fastas: {outpath2.name}")
+    outpath2.parent.mkdir(exist_ok=True, parents=True)
+
+    # find subset of fasta file based on gene neighbourhood ids
+    with open_fasta(fasta_file) as handle:
+        all_fastas = SeqIO.parse(handle, "fasta")
+        gene_neighbours = [
+            record for record in all_fastas if record.id in gene_ids_subset
+        ]
+        with open(outpath2, "w") as f:
+            SeqIO.write(gene_neighbours, f, "fasta")
+
+    # generate fasta pairwise combinations:
+    # WARN: only doing it for subset of all gene neighbours
+    # TODO: update this for better arg parsing
     if args.add_pairwise_fastas is True:
-        fasta_pairwise_generation(args, outpath, gene_name)
+        fasta_pairwise_generation(args, outpath2, gene_name)
 
 
 def fasta_pairwise_generation(
