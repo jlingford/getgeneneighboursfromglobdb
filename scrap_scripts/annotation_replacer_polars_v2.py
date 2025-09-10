@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import polars as pl
+import re
 
 
 # file paths
@@ -85,3 +86,81 @@ new_gff.write_csv(
     separator="\t",
     include_header=False,
 )
+
+gene_name = "AMXMAG_0088___3887"
+
+# NOTE: hardcoded to look for ID=
+goi_row = gff.filter(pl.col("attributes").str.contains(f"ID={gene_name}"))
+# if goi_row.empty:
+#     raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
+
+# Get genetic neighbourhood coordinates to center on gene of interest
+goi_start = goi_row[0, "start"]
+goi_end = goi_row[0, "end"]
+goi_scaffold = goi_row[0, "gene_id"]
+goi_strand = goi_row[0, "strand"]
+
+window_size = 5000
+
+# Define window coordinates
+window_start: int = max(goi_start - window_size, 0)
+window_end: int = goi_end + window_size
+
+# Get subset of gff file based on window. Get only genes from same strand as GOI, unless specified otherwise
+gff_subset = gff.filter(
+    (pl.col("strand") == goi_strand)
+    & (pl.col("gene_id") == goi_scaffold)
+    & (pl.col("start") <= window_end)
+    & (pl.col("end") >= window_start)
+)
+gff_subset = gff.filter(
+    (pl.col("gene_id") == goi_scaffold)
+    & (pl.col("start") <= window_end)
+    & (pl.col("end") >= window_start)
+)
+# get subset of gff without maturation genes, for smaller fasta file extraction
+# TODO: incorporate this function in a smarter way:
+gff_subset_nomaturation = gff.filter(
+    (pl.col("strand") == goi_strand)
+    & (pl.col("gene_id") == goi_scaffold)
+    & (pl.col("start") <= window_end)
+    & (pl.col("end") >= window_start)
+    & (~pl.col("attributes").str.contains("maturation"))
+)
+
+gene_ids: list = (
+    gff_subset.select(
+        pl.col("attributes")
+        .str.extract_groups(r"ID=([^;]+)")
+        .struct.field("1")
+        .alias("gene_id")
+    )
+    .to_series()
+    .to_list()
+)
+
+gene_ids_nomaturation: list = (
+    gff_subset_nomaturation.select(
+        pl.col("attributes")
+        .str.extract_groups(r"ID=([^;]+)")
+        .struct.field("1")
+        .alias("gene_id")
+    )
+    .to_series()
+    .to_list()
+)
+
+test = (
+    gff_subset.select(
+        pl.col("attributes")
+        .str.extract_groups(r"ID=([^;]+)")
+        .struct.field("1")
+        .alias("gene_id")
+    )
+    .to_series()
+    .to_list()
+)
+
+
+print(gene_ids)
+print(gene_ids_nomaturation)
