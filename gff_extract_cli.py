@@ -7,6 +7,7 @@ Control flow:
     ↳ parse_arguments()
     ↳ process_target_genes()
         ↳ extract_gene_neighbourhood()
+            ↳ replace_gff_attributes()
             ↳ plot_gene_neighbourhood()
             ↳ fasta_neighbourhood_extract()
                 ↳ fasta_pairwise_generation()
@@ -19,16 +20,12 @@ Control flow:
 # imports
 from ast import List
 from io import TextIOWrapper
-import os
-import re
-import sys
 import gzip
-import shutil
 import logging
 import argparse
 import textwrap
-import numpy as np
 import pandas as pd
+import polars as pl
 import seaborn as sns
 from BCBio import GFF
 from pathlib import Path
@@ -60,9 +57,10 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     # Add mutually exclusive groups of arguments
-    mutparse = parser.add_mutually_exclusive_group(required=True)
+    input_args = parser.add_mutually_exclusive_group(required=True)
+    anno_args = parser.add_mutually_exclusive_group()
 
-    mutparse.add_argument(
+    input_args.add_argument(
         "-l",
         "--gene-list",
         dest="gene_list",
@@ -71,7 +69,7 @@ def parse_arguments() -> argparse.Namespace:
         help="Path to list of genes of interest (Either -l or -n are required).",
     )
 
-    mutparse.add_argument(
+    input_args.add_argument(
         "-n",
         "--gene-name",
         dest="gene_name",
@@ -129,7 +127,7 @@ def parse_arguments() -> argparse.Namespace:
         "--add-annotation",
         dest="add_annotation",
         action="store_true",
-        help="Option to extract annotation table [Default: off]",
+        help="Option to return a table of annotations for the gene neighbourhood [Default: off]",
     )
 
     parser.add_argument(
@@ -194,6 +192,22 @@ def parse_arguments() -> argparse.Namespace:
         help="Option to prepend fasta ID headers with '>protein|' for Chai-1 input [Default: off]",
     )
 
+    anno_args.add_argument(
+        "-K",
+        "--use-kofam-annotation",
+        dest="use_kofam_annotation",
+        action="store_true",
+        help="Replace default COG20_FUNCTION annotations with KOfam annotations",
+    )
+
+    anno_args.add_argument(
+        "-P",
+        "--use-pfam-annotation",
+        dest="use_pfam_annotation",
+        action="store_true",
+        help="Replace default COG20_FUNCTION annotations with Pfam annotations",
+    )
+
     # Parse arguments into args object
     args = parser.parse_args()
 
@@ -204,31 +218,43 @@ def parse_arguments() -> argparse.Namespace:
     if args.data_dir.is_dir():
         print(f"Target dir for .gff files provided. Searching {args.data_dir}/...")
 
-    # Check arguments that depend on other arguments are valid:
-    # ###
-
     return args
 
 
-def extract_gene_neighbourhood(
-    args: argparse.Namespace, gene_name: str, gff_file: Path
-) -> None:
-    """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
+def replace_gff_attributes(
+    args: argparse.Namespace, gene_name: str, gff_file: Path, annotation_file: Path
+) -> pl.DataFrame:
+    """Rewrite the attributes column of the gff file with KOfam annotation information instead of the default COG20_FUNCTION annotations"""
     # params
-    gff_file = gff_file  # The input gff file
-    output_dir = args.output_dir  # Your output file
+    gff_file = gff_file
+    annotation_file = annotation_file
     gene_name = gene_name
-    upstream_window = args.upstream_window  # Size of window upstream/downstream
-    downstream_window = args.downstream_window  # Size of window upstream/downstream
+    output_dir = args.output_dir
 
-    # --- Load GFF file into DataFrame ---
-    gff = pd.read_csv(
+    # load master annotation table of genome
+    df = pl.read_csv(
+        annotation_file,
+        separator="\t",
+        skip_lines=1,
+        has_header=False,
+        new_columns=["ID", "db_xref", "Name", "product", "evalue"],
+        schema_overrides={"evalue": pl.Float64},
+    )
+
+    # keep only rows of KOfam or Pfam annotations, and only the best evalue per gene ID
+    if args.use_kofam_annotation is True:
+        df = df.filter(pl.col("db_xref") == "KOfam")
+    if args.use_pfam_annotation is True:
+        df = df.filter(pl.col("db_xref") == "Pfam")
+
+    df = df.sort("evalue").group_by("ID").first()
+
+    # load .gff file of genome
+    gff = pl.read_csv(
         gff_file,
-        sep="\t",
-        comment="#",
-        header=None,
-        compression="infer",
-        names=[
+        separator="\t",
+        has_header=False,
+        new_columns=[
             "seqid",
             "source",
             "type",
@@ -241,17 +267,96 @@ def extract_gene_neighbourhood(
         ],
     )
 
+    # gene ID is conatined within the attributes column. extract it, and use it as the key for merging with the annotations table
+    gff = gff.with_columns(
+        pl.col("attributes").str.extract(r"ID=([^;]+)", 1).alias("ID")
+    )
+
+    # merge gff table and annotations table based on the shared gene ID
+    merged_gff = gff.join(df, on="ID", how="left")
+
+    # remake the gff attributes column using KOfam annotation information from the annotations table
+    merged_gff = merged_gff.with_columns(
+        pl.when(pl.col("Name").is_not_null())
+        .then(
+            pl.format(
+                "ID={};Name={};db_xref={};product={}",
+                pl.col("ID"),
+                pl.col("Name"),
+                pl.col("db_xref"),
+                pl.col("product"),
+            )
+        )
+        .otherwise(pl.col("attributes"))
+        .alias("attributes")
+    )
+
+    # discard the columns of the merged gff df that aren't native to the .gff format
+    new_gff = merged_gff.select(
+        [
+            "seqid",
+            "source",
+            "type",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "phase",
+            "attributes",
+        ]
+    )
+
+    return new_gff
+
+
+def extract_gene_neighbourhood(
+    args: argparse.Namespace, gene_name: str, gff_file: Path
+) -> None:
+    """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
+    # params
+    gff_file = gff_file  # The input gff file
+    output_dir = args.output_dir  # Your output file
+    gene_name = gene_name
+    genome_name = gene_name.split("___")[0]
+    upstream_window = args.upstream_window  # Size of window upstream/downstream
+    downstream_window = args.downstream_window  # Size of window upstream/downstream
+
+    anno_file = find_annotation_file(args.data_dir, genome_name)
+
+    # load gff dataframe
+    if args.use_kofam_annotation is True:
+        gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
+    if args.use_pfam_annotation is True:
+        gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
+    else:
+        gff = pl.read_csv(
+            gff_file,
+            separator="\t",
+            has_header=False,
+            new_columns=[
+                "seqid",
+                "source",
+                "type",
+                "start",
+                "end",
+                "score",
+                "strand",
+                "phase",
+                "attributes",
+            ],
+        )
+
     # Find gene of interest (GOI) in .gff file
     # NOTE: hardcoded to look for ID=
-    goi_row = gff[gff["attributes"].str.contains(f"ID={gene_name}", na=False)]
-    if goi_row.empty:
-        raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
+    goi_row = gff.filter(pl.col("attributes").str.contains(f"ID={gene_name}"))
+    # if goi_row.empty:
+    #     raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
 
     # Get genetic neighbourhood coordinates to center on gene of interest
-    goi_start = goi_row.iloc[0]["start"]
-    goi_end = goi_row.iloc[0]["end"]
-    goi_scaffold = goi_row.iloc[0]["seqid"]
-    goi_strand = goi_row.iloc[0]["strand"]
+    goi_start = goi_row[0, "start"]
+    goi_end = goi_row[0, "end"]
+    goi_scaffold = goi_row[0, "seqid"]
+    goi_strand = goi_row[0, "strand"]
 
     # Define window coordinates
     window_start: int = max(goi_start - upstream_window, 0)
@@ -259,56 +364,83 @@ def extract_gene_neighbourhood(
 
     # Get subset of gff file based on window. Get only genes from same strand as GOI, unless specified otherwise
     if args.both_strands is not True:
-        gff_subset = gff[
-            (gff["strand"] == goi_strand)
-            & (gff["seqid"] == goi_scaffold)
-            & (gff["start"] <= window_end)
-            & (gff["end"] >= window_start)
-        ]
+        gff_subset = gff.filter(
+            (pl.col("strand") == goi_strand)
+            & (pl.col("seqid") == goi_scaffold)
+            & (pl.col("start") <= window_end)
+            & (pl.col("end") >= window_start)
+        )
     else:
-        gff_subset = gff[
-            (gff["seqid"] == goi_scaffold)
-            & (gff["start"] <= window_end)
-            & (gff["end"] >= window_start)
-        ]
+        gff_subset = gff.filter(
+            (pl.col("seqid") == goi_scaffold)
+            & (pl.col("start") <= window_end)
+            & (pl.col("end") >= window_start)
+        )
     # get subset of gff without maturation genes, for smaller fasta file extraction
     # TODO: incorporate this function in a smarter way:
-    gff_subset_nomaturation = gff[
-        (gff["strand"] == goi_strand)
-        & (gff["seqid"] == goi_scaffold)
-        & (gff["start"] <= window_end)
-        & (gff["end"] >= window_start)
-        & (~gff["attributes"].str.contains("maturation", na=False))
-    ]
+    gff_subset_nomaturation = gff.filter(
+        (pl.col("strand") == goi_strand)
+        & (pl.col("seqid") == goi_scaffold)
+        & (pl.col("start") <= window_end)
+        & (pl.col("end") >= window_start)
+        & (~pl.col("attributes").str.contains("maturation"))
+    )
+
+    # return list of gene IDs for fasta file output, called at end of this function
+    gene_ids: list = (
+        gff_subset.select(
+            pl.col("attributes")
+            .str.extract_groups(r"ID=([^;]+)")
+            .struct.field("1")
+            .alias("gene_id")
+        )
+        .to_series()
+        .to_list()
+    )
+
+    gene_ids_nomaturation: list = (
+        gff_subset_nomaturation.select(
+            pl.col("attributes")
+            .str.extract_groups(r"ID=([^;]+)")
+            .struct.field("1")
+            .alias("gene_id")
+        )
+        .to_series()
+        .to_list()
+    )
 
     # Write output
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___genetic_neighbourhood.gff"
+    if args.use_kofam_annotation is True:
+        outpath = (
+            Path(output_dir)
+            / gene_name
+            / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
+        )
+    if args.use_pfam_annotation is True:
+        outpath = (
+            Path(output_dir)
+            / gene_name
+            / f"{gene_name}___gene_neighbours_Pfam_annotations.gff"
+        )
+    else:
+        outpath = (
+            Path(output_dir)
+            / gene_name
+            / f"{gene_name}___gene_neighbours_COG20_annotations.gff"
+        )
+
     if outpath.exists():
         logging.warning(f"Writing over existing output .gff file: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
-    gff_subset.to_csv(
+
+    gff_subset.write_csv(
         outpath,
-        sep="\t",
-        header=False,
-        index=False,
+        separator="\t",
+        include_header=False,
     )
     print(
         f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {outpath.name}"
     )
-
-    # match gene ID name contained within "ID="
-    gene_ids = gff_subset["attributes"].str.findall(r"ID=([^;]+)")
-    # create list of gene_ids from gene neighbourhood, getting them out of the nested list
-    gene_ids: list = [item for sublist in gene_ids for item in sublist]
-
-    # get subset of gff without maturation genes, for smaller fasta file extraction
-    # TODO: incorporate this function in a smarter way:
-    gene_ids_nomaturation = gff_subset_nomaturation["attributes"].str.findall(
-        r"ID=([^;]+)"
-    )
-    gene_ids_nomaturation: list = [
-        item for sublist in gene_ids_nomaturation for item in sublist
-    ]
 
     # Execute downstream functions, contigent on args:
 
