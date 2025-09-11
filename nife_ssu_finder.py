@@ -105,7 +105,7 @@ def parse_arguments() -> argparse.Namespace:
         "--upstream",
         dest="upstream_window",
         type=int,
-        default=10000,
+        default=2500,
         required=False,
         metavar="INT",
         help="Size of window (in base pairs) upstream of GOI [Default: 10000]",
@@ -116,7 +116,7 @@ def parse_arguments() -> argparse.Namespace:
         "--downstream",
         dest="downstream_window",
         type=int,
-        default=10000,
+        default=2500,
         required=False,
         metavar="INT",
         help="Size of window (in base pairs) downstream of GOI [Default: 10000]",
@@ -326,7 +326,7 @@ def extract_gene_neighbourhood(
     # load gff dataframe
     if args.use_kofam_annotation is True:
         gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
-    if args.use_pfam_annotation is True:
+    elif args.use_pfam_annotation is True:
         gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
     else:
         gff = pl.read_csv(
@@ -386,6 +386,52 @@ def extract_gene_neighbourhood(
         & (~pl.col("attributes").str.contains("maturation"))
     )
 
+    # annotation codes for nife ssu's
+    ssu_annotation_codes = ["COG1740", "K06282", "PF14720.10"]
+
+    # filter rows to just ssu's
+    nife_ssu_candidates = gff_subset.filter(
+        pl.any_horizontal(
+            [
+                pl.col("attributes").str.contains(ssu_code)
+                for ssu_code in ssu_annotation_codes
+            ]
+        )
+    )
+
+    if nife_ssu_candidates.is_empty():
+        print(f"No NiFe SSU detected in the neighbourhood of {gene_name}")
+
+    # find closest ssu to target
+    nife_ssu_candidates = nife_ssu_candidates.with_columns(
+        pl.when(pl.col("start") > goi_end)
+        .then(pl.col("start") - goi_end)
+        .otherwise(goi_start - pl.col("end").alias("distance"))
+    )
+    closest_ssu = nife_ssu_candidates.sort("distance").head(1)
+
+    # extract ssu id
+    ssu_id = (
+        closest_ssu.select(
+            pl.col("attributes").str.extract_groups(r"ID=([^;]+)").struct.field("1")
+        )
+        .to_series()
+        .to_list()[0]
+    )
+
+    if args.add_fasta is True:
+        target_name = gene_name.split("___")[0]
+        fasta_file = find_fasta_file(args.data_dir, target_name)
+        records = SeqIO.parse(fasta_file, "fasta")
+        matching_record = next((rec for rec in records if rec.id == ssu_id), None)
+        if not matching_record:
+            print(f"No NiFe SSU found in {fasta_file}")
+        # write fasta
+        outpath = (
+            Path(output_dir) / gene_name / f"{gene_name}___SSUcandidate-{ssu_id}.faa"
+        )
+        SeqIO.write(matching_record, outpath, "fasta")
+
     # return list of gene IDs for fasta file output, called at end of this function
     gene_ids: list = (
         gff_subset.select(
@@ -416,7 +462,7 @@ def extract_gene_neighbourhood(
             / gene_name
             / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
         )
-    if args.use_pfam_annotation is True:
+    elif args.use_pfam_annotation is True:
         outpath = (
             Path(output_dir)
             / gene_name
