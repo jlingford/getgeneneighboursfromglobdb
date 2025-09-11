@@ -23,7 +23,9 @@ from io import TextIOWrapper
 import gzip
 import logging
 import argparse
+from operator import ge
 import textwrap
+from numpy import argsort
 import pandas as pd
 import polars as pl
 import seaborn as sns
@@ -161,9 +163,9 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-N",
-        "--no-plot",
-        dest="no_plot",
+        "-M",
+        "--make-plot",
+        dest="make_plot",
         action="store_true",
         help="Option to not output genetic neighbourhood plots [Default: off]",
     )
@@ -386,52 +388,6 @@ def extract_gene_neighbourhood(
         & (~pl.col("attributes").str.contains("maturation"))
     )
 
-    # annotation codes for nife ssu's
-    ssu_annotation_codes = ["COG1740", "K06282", "PF14720.10"]
-
-    # filter rows to just ssu's
-    nife_ssu_candidates = gff_subset.filter(
-        pl.any_horizontal(
-            [
-                pl.col("attributes").str.contains(ssu_code)
-                for ssu_code in ssu_annotation_codes
-            ]
-        )
-    )
-
-    if nife_ssu_candidates.is_empty():
-        print(f"No NiFe SSU detected in the neighbourhood of {gene_name}")
-
-    # find closest ssu to target
-    nife_ssu_candidates = nife_ssu_candidates.with_columns(
-        pl.when(pl.col("start") > goi_end)
-        .then(pl.col("start") - goi_end)
-        .otherwise(goi_start - pl.col("end").alias("distance"))
-    )
-    closest_ssu = nife_ssu_candidates.sort("distance").head(1)
-
-    # extract ssu id
-    ssu_id = (
-        closest_ssu.select(
-            pl.col("attributes").str.extract_groups(r"ID=([^;]+)").struct.field("1")
-        )
-        .to_series()
-        .to_list()[0]
-    )
-
-    if args.add_fasta is True:
-        target_name = gene_name.split("___")[0]
-        fasta_file = find_fasta_file(args.data_dir, target_name)
-        records = SeqIO.parse(fasta_file, "fasta")
-        matching_record = next((rec for rec in records if rec.id == ssu_id), None)
-        if not matching_record:
-            print(f"No NiFe SSU found in {fasta_file}")
-        # write fasta
-        outpath = (
-            Path(output_dir) / gene_name / f"{gene_name}___SSUcandidate-{ssu_id}.faa"
-        )
-        SeqIO.write(matching_record, outpath, "fasta")
-
     # return list of gene IDs for fasta file output, called at end of this function
     gene_ids: list = (
         gff_subset.select(
@@ -457,50 +413,51 @@ def extract_gene_neighbourhood(
 
     # Write output
     if args.use_kofam_annotation is True:
-        outpath = (
+        gff_outpath = (
             Path(output_dir)
             / gene_name
             / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
         )
     elif args.use_pfam_annotation is True:
-        outpath = (
+        gff_outpath = (
             Path(output_dir)
             / gene_name
             / f"{gene_name}___gene_neighbours_Pfam_annotations.gff"
         )
     else:
-        outpath = (
+        gff_outpath = (
             Path(output_dir)
             / gene_name
             / f"{gene_name}___gene_neighbours_COG20_annotations.gff"
         )
 
-    if outpath.exists():
-        logging.warning(f"Writing over existing output .gff file: {outpath.name}")
-    outpath.parent.mkdir(exist_ok=True, parents=True)
+    if gff_outpath.exists():
+        logging.warning(f"Writing over existing output .gff file: {gff_outpath.name}")
+    gff_outpath.parent.mkdir(exist_ok=True, parents=True)
 
     gff_subset.write_csv(
-        outpath,
+        gff_outpath,
         separator="\t",
         include_header=False,
     )
     print(
-        f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {outpath.name}"
+        f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {gff_outpath.name}"
     )
 
     # Execute downstream functions, contigent on args:
 
+    # call nife ssu extractor
+    target_name = gene_name.split("___")[0]
+    fasta_file = find_fasta_file(args.data_dir, target_name)
+    extract_nife_ssu(args, gene_name, gff_subset, fasta_file)
+
     # plot gene neighbourhood figure
-    gff_input_file = str(outpath)
-    if args.no_plot is not True:
-        plot_gene_neighbourhood(
-            args, gene_name, gff_input_file, window_start, window_end
-        )
+    gff_input_file = str(gff_outpath)
+    if args.make_plot is True:
+        plot_gene_neighbourhood(args, gene_name, gff_input_file)
 
     # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
     if args.add_fasta is True:
-        target_name = gene_name.split("___")[0]
-        fasta_file = find_fasta_file(args.data_dir, target_name)
         # NOTE: adding the gene IDs list without maturation genes
         fasta_neighbourhood_extract(
             args, gene_name, fasta_file, gene_ids, gene_ids_nomaturation
@@ -508,17 +465,210 @@ def extract_gene_neighbourhood(
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
     if args.add_annotation is True:
-        target_name = gene_name.split("___")[0]
-        anno_file = find_annotation_file(args.data_dir, target_name)
         annotation_extract(args, gene_name, anno_file, gene_ids)
+
+
+def extract_nife_ssu(
+    args: argparse.Namespace,
+    target_name: str,
+    gff_input: pl.DataFrame,
+    fasta_file: Path,
+) -> None:
+    """Find the nearest NiFe SSU based on gene annotations in gff dataframe"""
+    # params
+    output_dir = args.output_dir
+    gff = gff_input
+    gene_name = target_name
+    lsu_id = target_name
+    upstream_window = args.upstream_window  # Size of window upstream/downstream
+    downstream_window = args.downstream_window  # Size of window upstream/downstream
+
+    codes_of_interest = [
+        "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
+        "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
+        "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
+        "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
+        "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
+        "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
+        "K14113",  # energy-converting hydrogenase B subunit D
+        "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
+        "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
+        "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+        "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
+        "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
+        "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
+    ]
+
+    goi = gff.filter(pl.col("attributes").str.contains(f"ID={lsu_id}"))
+
+    scaffold = goi.item(0, "seqid")
+    strand = goi.item(0, "strand")
+    start = goi.item(0, "start")
+    end = goi.item(0, "end")
+
+    window_start = max(start - upstream_window, 0)
+    window_end = end + downstream_window
+
+    # --- Extract neighbourhood ---
+    neighbours = gff.filter(
+        (pl.col("seqid") == scaffold)
+        & (pl.col("start") <= window_end)
+        & (pl.col("end") >= window_start)
+        & (pl.col("strand") == strand)
+    )
+
+    # --- Identify candidate matching codes ---
+    candidates = neighbours.filter(
+        pl.any_horizontal(
+            [pl.col("attributes").str.contains(code) for code in codes_of_interest]
+        )
+    )
+
+    if not candidates.is_empty():
+        # Choose the closest neighbour (e.g., smallest distance to target)
+        candidates = candidates.with_columns(
+            pl.when(pl.col("start") > end)
+            .then(pl.col("start") - end)
+            .otherwise(start - pl.col("end"))
+            .alias("distance")
+        )
+        closest = candidates.sort("distance").head(1)
+
+        # --- Extract gene ID from attributes ---
+        ssu_id = (
+            closest.select(
+                pl.col("attributes").str.extract_groups(r"ID=([^;]+)").struct.field("1")
+            )
+            .to_series()
+            .to_list()[0]
+        )
+        # make output path
+        outpath1 = Path(output_dir) / gene_name / f"{lsu_id}___NiFe-SSU-{ssu_id}.faa"
+        outpath1.parent.mkdir(exist_ok=True, parents=True)
+        # make other output path
+        outpath2 = (
+            Path(output_dir) / gene_name / f"{lsu_id}___NiFe-SSU-{ssu_id}-Dimer.faa"
+        )
+        outpath2.parent.mkdir(exist_ok=True, parents=True)
+
+        # find subset of fasta file based on gene neighbourhood ids
+        with open_fasta(fasta_file) as handle:
+            records = list(SeqIO.parse(handle, "fasta"))
+            ssu_record = next((rec for rec in records if rec.id == ssu_id), None)
+            lsu_record = next((rec for rec in records if rec.id == lsu_id), None)
+            combined_records = [lsu_record, ssu_record]
+            # all_fastas = SeqIO.parse(handle, "fasta")
+            # gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
+            with open(outpath1, "w") as f:
+                SeqIO.write(ssu_record, f, "fasta")
+            with open(outpath2, "w") as f:
+                SeqIO.write(combined_records, f, "fasta")
+    else:
+        print(f"No neighbours near {lsu_id} match codes {codes_of_interest}")
+
+
+def fasta_ssu_extract(
+    args: argparse.Namespace,
+    gene_name: str,
+    fasta_path: Path,
+    ssu_candidates: list,
+) -> None:
+    """Extract NiFe SSU fasta sequence and output it, along with its LSU partner in another fasta file"""
+    # params
+    output_dir = args.output_dir
+    fasta_file = fasta_path
+    gene_name = gene_name
+    gene_ids = ssu_candidates
+
+    # make output dir
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours.faa"
+    if outpath.exists():
+        logging.warning(f"Writing over existing fastas: {outpath.name}")
+    outpath.parent.mkdir(exist_ok=True, parents=True)
+
+    # find subset of fasta file based on gene neighbourhood ids
+    with open_fasta(fasta_file) as handle:
+        all_fastas = SeqIO.parse(handle, "fasta")
+        gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
+        with open(outpath, "w") as f:
+            SeqIO.write(gene_neighbours, f, "fasta")
+
+    # Do the same for subset of fasta list
+    # make output dir
+    outpath2 = (
+        Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours_subset.faa"
+    )
+    if outpath2.exists():
+        logging.warning(f"Writing over existing fastas: {outpath2.name}")
+    outpath2.parent.mkdir(exist_ok=True, parents=True)
+
+    # find subset of fasta file based on gene neighbourhood ids
+    with open_fasta(fasta_file) as handle:
+        all_fastas = SeqIO.parse(handle, "fasta")
+        gene_neighbours = [
+            record for record in all_fastas if record.id in gene_ids_subset
+        ]
+        with open(outpath2, "w") as f:
+            SeqIO.write(gene_neighbours, f, "fasta")
+
+
+def fasta_neighbourhood_extract(
+    args: argparse.Namespace,
+    gene_name: str,
+    fasta_file: Path,
+    gene_ids_full: list,
+    gene_ids_subset: list,
+) -> None:
+    """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
+    # params
+    output_dir = args.output_dir
+    fasta_file = fasta_file
+    gene_ids = gene_ids_full
+    gene_ids_subset = gene_ids_subset
+    gene_name = gene_name
+
+    # make output dir
+    outpath = Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours.faa"
+    if outpath.exists():
+        logging.warning(f"Writing over existing fastas: {outpath.name}")
+    outpath.parent.mkdir(exist_ok=True, parents=True)
+
+    # find subset of fasta file based on gene neighbourhood ids
+    with open_fasta(fasta_file) as handle:
+        all_fastas = SeqIO.parse(handle, "fasta")
+        gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
+        with open(outpath, "w") as f:
+            SeqIO.write(gene_neighbours, f, "fasta")
+
+    # Do the same for subset of fasta list
+    # make output dir
+    outpath2 = (
+        Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours_subset.faa"
+    )
+    if outpath2.exists():
+        logging.warning(f"Writing over existing fastas: {outpath2.name}")
+    outpath2.parent.mkdir(exist_ok=True, parents=True)
+
+    # find subset of fasta file based on gene neighbourhood ids
+    with open_fasta(fasta_file) as handle:
+        all_fastas = SeqIO.parse(handle, "fasta")
+        gene_neighbours = [
+            record for record in all_fastas if record.id in gene_ids_subset
+        ]
+        with open(outpath2, "w") as f:
+            SeqIO.write(gene_neighbours, f, "fasta")
+
+    # generate fasta pairwise combinations:
+    # WARN: only doing it for subset of all gene neighbours
+    # TODO: update this for better arg parsing
+    if args.add_pairwise_fastas is True:
+        fasta_pairwise_generation(args, outpath2, gene_name)
 
 
 def plot_gene_neighbourhood(
     args: argparse.Namespace,
     gene_name: str,
     gff_input_file: str,
-    window_start: int,
-    window_end: int,
 ) -> None:
     """Plot the genetic neighbourhood around gene of interest using dna_features_viewer"""
     # params
@@ -527,8 +677,8 @@ def plot_gene_neighbourhood(
     format = args.plot_format
     target_gene_id = gene_name.split("___")[1]
     gff_input_file = gff_input_file
-    window_start = window_start
-    window_end = window_end
+    window_start = args.upstream_window
+    window_end = args.downstream_window
     # WARN: annotation code list is hardcoded... change that
     # TODO: provide a way to update this list from CLI args
     anno_codes_targets = [
@@ -597,59 +747,6 @@ def plot_gene_neighbourhood(
     ax.figure.savefig(outpath, dpi=dpi, format=format)
     # close figure to avoid memory issues
     plt.close("all")
-
-
-def fasta_neighbourhood_extract(
-    args: argparse.Namespace,
-    gene_name: str,
-    fasta_file: Path,
-    gene_ids_full: list,
-    gene_ids_subset: list,
-) -> None:
-    """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
-    # params
-    output_dir = args.output_dir
-    fasta_file = fasta_file
-    gene_ids = gene_ids_full
-    gene_ids_subset = gene_ids_subset
-    gene_name = gene_name
-
-    # make output dir
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours.faa"
-    if outpath.exists():
-        logging.warning(f"Writing over existing fastas: {outpath.name}")
-    outpath.parent.mkdir(exist_ok=True, parents=True)
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(fasta_file) as handle:
-        all_fastas = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
-        with open(outpath, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
-
-    # Do the same for subset of fasta list
-    # make output dir
-    outpath2 = (
-        Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours_subset.faa"
-    )
-    if outpath2.exists():
-        logging.warning(f"Writing over existing fastas: {outpath2.name}")
-    outpath2.parent.mkdir(exist_ok=True, parents=True)
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(fasta_file) as handle:
-        all_fastas = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [
-            record for record in all_fastas if record.id in gene_ids_subset
-        ]
-        with open(outpath2, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
-
-    # generate fasta pairwise combinations:
-    # WARN: only doing it for subset of all gene neighbours
-    # TODO: update this for better arg parsing
-    if args.add_pairwise_fastas is True:
-        fasta_pairwise_generation(args, outpath2, gene_name)
 
 
 def fasta_pairwise_generation(
