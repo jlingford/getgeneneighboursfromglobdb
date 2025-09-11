@@ -235,8 +235,7 @@ def replace_gff_attributes(
     df = pl.read_csv(
         annotation_file,
         separator="\t",
-        skip_lines=1,
-        has_header=False,
+        has_header=True,
         new_columns=["ID", "db_xref", "Name", "product", "evalue"],
         schema_overrides={"evalue": pl.Float64},
     )
@@ -247,7 +246,8 @@ def replace_gff_attributes(
     if args.use_pfam_annotation is True:
         df = df.filter(pl.col("db_xref") == "Pfam")
 
-    df = df.sort("evalue").group_by("ID").first()
+    # df = df.sort("evalue").group_by("ID").first()
+    df = df.unique(subset=["ID"], maintain_order=True)
 
     # load .gff file of genome
     gff = pl.read_csv(
