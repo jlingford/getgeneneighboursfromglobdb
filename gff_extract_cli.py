@@ -326,7 +326,7 @@ def extract_gene_neighbourhood(
     # load gff dataframe
     if args.use_kofam_annotation is True:
         gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
-    if args.use_pfam_annotation is True:
+    elif args.use_pfam_annotation is True:
         gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
     else:
         gff = pl.read_csv(
@@ -416,7 +416,7 @@ def extract_gene_neighbourhood(
             / gene_name
             / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
         )
-    if args.use_pfam_annotation is True:
+    elif args.use_pfam_annotation is True:
         outpath = (
             Path(output_dir)
             / gene_name
