@@ -26,7 +26,6 @@ import argparse
 from operator import ge
 import textwrap
 from numpy import argsort
-import pandas as pd
 import polars as pl
 import seaborn as sns
 from BCBio import GFF
@@ -213,12 +212,12 @@ def parse_arguments() -> argparse.Namespace:
     # Parse arguments into args object
     args = parser.parse_args()
 
-    # Info about input files
-    if args.data_dir.is_file():
-        print(f"Input .gff file provided: {args.data_dir}")
-
+    # Info about input dir
     if args.data_dir.is_dir():
         print(f"Target dir for .gff files provided. Searching {args.data_dir}/...")
+
+    if not args.data_dir.is_dir():
+        print(f"Error: target directory not provided")
 
     return args
 
@@ -825,60 +824,46 @@ def annotation_extract(
     gene_ids = gene_ids
     anno_file = annotation_file
     gene_name = gene_name
-    anno = pd.read_csv(anno_file, delimiter="\t", compression="infer")
 
-    # Reformat annotation table
+    # scan annotation tsv file
+    anno = pl.scan_csv(anno_file, separator="\t", has_header=True)
+
     # create subset of annotation table based on gene_ids list, and sorted based on gene_ids and evalues
-    anno_subset = anno[anno["gene_callers_id"].isin(gene_ids)].sort_values(
-        by=["gene_callers_id", "e_value"], ascending=[True, True]
+    anno_subset = anno.filter(pl.col("gene_callers_id").is_in(gene_ids)).sort(
+        ["gene_callers_id", "e_value"]
     )
-    # make dataframe of gene_ids to merge with annotation table later
-    gene_ids_df = pd.DataFrame({"gene_callers_id": gene_ids})
-    # Merge gene_ids df with annotation subset df
-    merged_with_missing = gene_ids_df.merge(
-        anno_subset, on="gene_callers_id", how="left"
-    )
-    # Fill in missing rows from merge with NaN
-    merged_filled = merged_with_missing.fillna(
-        {
-            "source": "-",
-            "accession": "-",
-            "function": "-",
-            "e_value": "-",
-        }
-    )
-    # Save annotation table
+
+    # Save annotation tsv subset
     outpath = Path(output_dir) / gene_name / f"{gene_name}___annotations.tsv"
     if outpath.exists():
         logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
-    merged_filled.to_csv(outpath, sep="\t", index=False)
+
+    anno_subset.collect().write_csv(outpath, separator="\t", include_header=True)
 
 
 def find_gff_file(input_path: Path, target_name: str) -> Path:
     """Find target .gff file in input directory based on name of gene of interest"""
-    matched_file = list(input_path.rglob(f"{target_name}*.gff*"))
-    if not matched_file:
-        raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-    elif len(matched_file) > 1:
-        logging.warning(f"Multiple files named: {target_name}: {matched_file}")
-        logging.warning(f"Using first matched .gff file: {matched_file[0]}")
-    return matched_file[0]
+    pattern = f"{target_name}*.gff*"
+    for file_match in input_path.rglob(pattern):
+        return file_match
+    raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
+
+
+def find_annotation_file(input_path: Path, target_name: str) -> Path:
+    """Find target annotation .tsv file in input directory based on name of gene of interest"""
+    pattern = f"{target_name}*.tsv*"
+    for file_match in input_path.rglob(pattern):
+        return file_match
+    raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
 
 
 def find_fasta_file(input_path: Path, target_name: str) -> Path:
     """Find target .faa (or .fasta) file in input directory based on name of gene of interest"""
-    matched_file = list(input_path.rglob(f"{target_name}*.faa*")) + list(
-        input_path.rglob(f"{target_name}*.fasta*")
-    )
-    if not matched_file:
-        raise FileNotFoundError(
-            f"Could not find target .faa file with name: {target_name}."
-        )
-    elif len(matched_file) > 1:
-        logging.warning(f"Multiple .faa files named: {target_name}: {matched_file}")
-        logging.warning(f"Using first matched .faa file: {matched_file[0]}")
-    return matched_file[0]
+    pattern = f"{target_name}*.faa*"
+    for file_match in input_path.rglob(pattern):
+        return file_match
+    raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
 
 
 def open_fasta(file_path: Path) -> TextIOWrapper:
@@ -887,19 +872,6 @@ def open_fasta(file_path: Path) -> TextIOWrapper:
         return gzip.open(file_path, "rt")
     else:
         return open(file_path, "r")
-
-
-def find_annotation_file(input_path: Path, target_name: str) -> Path:
-    """Find target annotation .tsv file in input directory based on name of gene of interest"""
-    matched_file = list(input_path.rglob(f"{target_name}*.tsv*"))
-    if not matched_file:
-        raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-    elif len(matched_file) > 1:
-        logging.warning(
-            f"Multiple annotation files named: {target_name}: {matched_file}"
-        )
-        logging.warning(f"Using first matched .tsv file: {matched_file[0]}")
-    return matched_file[0]
 
 
 def process_target_genes(args: argparse.Namespace) -> None:
@@ -912,7 +884,6 @@ def process_target_genes(args: argparse.Namespace) -> None:
                 target_name = gene_name.split("___")[0]
                 gff_file = find_gff_file(args.data_dir, target_name)
                 extract_gene_neighbourhood(args, gene_name, gff_file)
-
     # Case 2: Passing singular gene of interest with general gff parent dir
     if args.gene_name and args.data_dir.is_dir():
         gene_name = args.gene_name
