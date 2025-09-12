@@ -62,36 +62,45 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     # Add mutually exclusive groups of arguments
-    input_args = parser.add_mutually_exclusive_group(required=True)
+    input_genes_args = parser.add_mutually_exclusive_group(required=True)
+    globdb_input_args = parser.add_mutually_exclusive_group(required=True)
     anno_args = parser.add_mutually_exclusive_group()
 
-    input_args.add_argument(
+    input_genes_args.add_argument(
         "-l",
-        "--gene-list",
+        "--gene_list",
         dest="gene_list",
         type=Path,
         metavar="FILE",
-        help="Path to list of genes of interest (Either -l or -n are required).",
+        help="Path to list of genes of interest (Either -l or -n is required).",
     )
 
-    input_args.add_argument(
+    input_genes_args.add_argument(
         "-n",
-        "--gene-name",
+        "--gene_name",
         dest="gene_name",
         type=str,
         metavar="STR",
-        help="Name of gene of interest (Either -l or -n are required)",
+        help="Name of gene of interest (Either -l or -n is required)",
     )
 
     # Add individual arguments
-    parser.add_argument(
+    globdb_input_args.add_argument(
         "-d",
-        "--datadir",
+        "--globdb_dir",
         dest="data_dir",
         type=Path,
-        required=True,
         metavar="DIR",
-        help="Path to .gff base of dir containing .gff files (required)",
+        help="Path to base of GlobDB dir containing all .gff, .tsv, and .faa files (Either -d or -i is required)",
+    )
+
+    globdb_input_args.add_argument(
+        "-i",
+        "--globdb_index",
+        dest="index_path",
+        type=Path,
+        metavar="FILE.pkl",
+        help="Path to precomputed .pkl index file of GlobDB directory structure (Either -d or -i is required)",
     )
 
     parser.add_argument(
@@ -128,23 +137,27 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-a",
-        "--add-annotation",
-        dest="add_annotation",
+        "--no_annotation",
+        dest="no_annotation",
         action="store_true",
-        help="Option to return a table of annotations for the gene neighbourhood [Default: off]",
+        help="Option to not return a table of annotations for the gene neighbourhood [Default: off]",
     )
 
     parser.add_argument(
-        "-f",
-        "--add-fasta",
-        dest="add_fasta",
+        "--no_fasta",
+        dest="no_fasta",
         action="store_true",
-        help="Path to dir containing fasta files",
+        help="Option to not return a fasta file for the gene neighbourhood [Default: off]",
     )
 
     parser.add_argument(
-        "-I",
+        "--no_plot",
+        dest="no_plot",
+        action="store_true",
+        help="Option to not output genetic neighbourhood plots [Default: off]",
+    )
+
+    parser.add_argument(
         "--dpi",
         dest="plot_dpi",
         type=int,
@@ -155,8 +168,7 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-F",
-        "--plot-format",
+        "--plot_format",
         dest="plot_format",
         choices=["png", "pdf", "svg"],
         default="png",
@@ -166,40 +178,37 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-M",
-        "--make-plot",
-        dest="make_plot",
-        action="store_true",
-        help="Option to not output genetic neighbourhood plots [Default: off]",
-    )
-
-    parser.add_argument(
         "-B",
-        "--both-strands",
+        "--both_strands",
         dest="both_strands",
         action="store_true",
         help="Option to include both strands of genetic neighbourhood in output, rather than only genetic neighbours on the same strand as the gene-of-interest. [Default: off]",
     )
 
     parser.add_argument(
-        "-p",
-        "--add-pairwise-fastas",
+        "--pairwise_fastas",
         dest="add_pairwise_fastas",
         action="store_true",
         help="Option to generate fasta files containing pairwise combinations of all sequences in gene neighbourhood [Default: off]",
     )
 
     parser.add_argument(
-        "-c",
-        "--chai-fastas",
+        "--chai_fastas",
         dest="chai_fastas",
         action="store_true",
         help="Option to prepend fasta ID headers with '>protein|' for Chai-1 input [Default: off]",
     )
 
+    parser.add_argument(
+        "--boltz_fastas",
+        dest="boltz_fastas",
+        action="store_true",
+        help="Option to prepend fasta ID headers with '>A|protein|MSAPATH.a3m' for Boltz-1/2 input [Default: off]",
+    )
+
     anno_args.add_argument(
         "-K",
-        "--use-kofam-annotation",
+        "--use_kofam",
         dest="use_kofam_annotation",
         action="store_true",
         help="Replace default COG20_FUNCTION annotations with KOfam annotations",
@@ -207,7 +216,7 @@ def parse_arguments() -> argparse.Namespace:
 
     anno_args.add_argument(
         "-P",
-        "--use-pfam-annotation",
+        "--use_pfam",
         dest="use_pfam_annotation",
         action="store_true",
         help="Replace default COG20_FUNCTION annotations with Pfam annotations",
@@ -215,13 +224,6 @@ def parse_arguments() -> argparse.Namespace:
 
     # Parse arguments into args object
     args = parser.parse_args()
-
-    # Info about input dir
-    if args.data_dir.is_dir():
-        print(f"Target dir for .gff files provided. Searching {args.data_dir}/...")
-
-    if not args.data_dir.is_dir():
-        print(f"Error: target directory not provided")
 
     return args
 
@@ -237,12 +239,12 @@ def replace_gff_attributes(
     gff_file = gff_file
     annotation_file = annotation_file
     gene_name = gene_name
-    output_dir = args.output_dir
 
     # load master annotation table of genome
     df = pl.read_csv(
         annotation_file,
         separator="\t",
+        quote_char=None,
         has_header=True,
         new_columns=["ID", "db_xref", "Name", "product", "evalue"],
         schema_overrides={"evalue": pl.Float64},
@@ -261,6 +263,7 @@ def replace_gff_attributes(
     gff = pl.read_csv(
         gff_file,
         separator="\t",
+        quote_char=None,
         has_header=False,
         new_columns=[
             "seqid",
@@ -343,6 +346,7 @@ def extract_gene_neighbourhood(
         gff = pl.read_csv(
             gff_file,
             separator="\t",
+            quote_char=None,
             has_header=False,
             new_columns=[
                 "seqid",
@@ -459,19 +463,21 @@ def extract_gene_neighbourhood(
     extract_nife_ssu(args, gene_name, gff_subset, fasta_file)
 
     # plot gene neighbourhood figure
-    gff_input_file = str(gff_outpath)
-    if args.make_plot is True:
-        plot_gene_neighbourhood(args, gene_name, gff_input_file)
+    # gff_input_file = str(gff_outpath)
+    gff_input_file = gff_outpath
+    print(gff_input_file)
+    if args.no_plot is not True:
+        plot_gene_neighbourhood(args, gene_name, gff_input_file, goi_start, goi_end)
 
     # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
-    if args.add_fasta is True:
+    if args.no_fasta is not True:
         # NOTE: adding the gene IDs list without maturation genes
         fasta_neighbourhood_extract(
             args, gene_name, fasta_file, gene_ids, gene_ids_nomaturation
         )
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
-    if args.add_annotation is True:
+    if args.no_annotation is not True:
         annotation_extract(args, gene_name, anno_file, gene_ids)
 
 
@@ -492,9 +498,9 @@ def extract_nife_ssu(
 
     # WARN: hardcoded HMM annotation codes
     codes_of_interest = [
+        "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
         "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
         "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
-        "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
         "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
         "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
         "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
@@ -636,7 +642,7 @@ def fasta_neighbourhood_extract(
     gene_name = gene_name
 
     # make output dir
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours.faa"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_all.faa"
     if outpath.exists():
         logging.warning(f"Writing over existing fastas: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
@@ -650,9 +656,7 @@ def fasta_neighbourhood_extract(
 
     # Do the same for subset of fasta list
     # make output dir
-    outpath2 = (
-        Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours_subset.faa"
-    )
+    outpath2 = Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_subset.faa"
     if outpath2.exists():
         logging.warning(f"Writing over existing fastas: {outpath2.name}")
     outpath2.parent.mkdir(exist_ok=True, parents=True)
@@ -676,7 +680,9 @@ def fasta_neighbourhood_extract(
 def plot_gene_neighbourhood(
     args: argparse.Namespace,
     gene_name: str,
-    gff_input_file: str,
+    gff_input_file: Path,
+    goi_start: str,
+    goi_end: str,
 ) -> None:
     """Plot the genetic neighbourhood around gene of interest using dna_features_viewer"""
     # params
@@ -684,7 +690,8 @@ def plot_gene_neighbourhood(
     dpi = args.plot_dpi
     format = args.plot_format
     target_gene_id = gene_name.split("___")[1]
-    gff_input_file = gff_input_file
+    gff_input = str(gff_input_file)
+    # gff_input = gff_input_file
     window_start = args.upstream_window
     window_end = args.downstream_window
     # WARN: annotation code list is hardcoded... change that
@@ -736,7 +743,16 @@ def plot_gene_neighbourhood(
             return "#cdd6f4"
 
     # plot genetic neighbourhood figure, using CustomTranslator
-    record = CustomTranslator().translate_record(gff_input_file)
+    record = CustomTranslator().translate_record(
+        record=gff_input, record_class="linear", filetype="gff"
+    )
+
+    # Suppose goi_start/goi_end are gene positions on this scaffold
+    window_start = max(0, goi_start - args.upstream_window)
+    window_end = goi_end + args.downstream_window
+    # Clamp to sequence length to avoid overshooting
+    window_end = min(window_end, record.sequence_length)
+
     # set sequence length of record to avoid out of bounds error
     record.sequence_length = max(window_end, record.sequence_length)
     # crop plot to window
@@ -778,13 +794,23 @@ def fasta_pairwise_generation(
     # sort all fasta records by the dist_from_goi function
     sorted_records = sorted(records, key=dist_from_goi)
 
-    # Modify fasta header IDs of sorted_records for Chai-1 input, using the SeqRecord function
+    # Modify fasta header IDs of sorted_records for Chai-1 or Boltz input, using the SeqRecord function
     if args.chai_fastas is True:
         seq_records = [
             SeqRecord(
                 seq=record.seq,
                 name=record.id,
                 id=f"protein|{record.id}",
+                description="",
+            )
+            for record in sorted_records
+        ]
+    elif args.boltz_fastas is True:
+        seq_records = [
+            SeqRecord(
+                seq=record.seq,
+                name=record.id,
+                id=f"A|protein|MSAPATH.a3m",
                 description="",
             )
             for record in sorted_records
@@ -835,54 +861,21 @@ def annotation_extract(
     gene_name = gene_name
 
     # scan annotation tsv file
-    anno = pl.scan_csv(anno_file, separator="\t", has_header=True)
+    anno = pl.scan_csv(anno_file, separator="\t", has_header=True, quote_char=None)
 
     # create subset of annotation table based on gene_ids list, and sorted based on gene_ids and evalues
     anno_subset = anno.filter(pl.col("gene_callers_id").is_in(gene_ids)).sort(
         ["gene_callers_id", "e_value"]
     )
+    # anno_subset = anno.filter(pl.col("gene_callers_id").is_in(gene_ids))
 
     # Save annotation tsv subset
     outpath = Path(output_dir) / gene_name / f"{gene_name}___annotations.tsv"
     if outpath.exists():
         logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
-
     anno_subset.collect().write_csv(outpath, separator="\t", include_header=True)
-
-
-# TODO: remove old functions based on rglob
-# def find_gff_file(input_path: Path, target_name: str) -> Path:
-#     """Find target .gff file in input directory based on name of gene of interest"""
-#     pattern = f"{target_name}*.gff*"
-#     for file_match in input_path.rglob(pattern):
-#         print(file_match)
-#         return file_match
-#     raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-#
-#
-# def find_annotation_file(input_path: Path, target_name: str) -> Path:
-#     """Find target annotation .tsv file in input directory based on name of gene of interest"""
-#     pattern = f"{target_name}*.tsv*"
-#     for file_match in input_path.rglob(pattern):
-#         return file_match
-#     raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-#
-#
-# def find_fasta_file(input_path: Path, target_name: str) -> Path:
-#     """Find target .faa (or .fasta) file in input directory based on name of gene of interest"""
-#     pattern = f"{target_name}*.faa*"
-#     for file_match in input_path.rglob(pattern):
-#         return file_match
-#     raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-#
-#
-# def open_gzipd_gff(file_path: Path) -> TextIO:
-#     """Open a .gff file that might be gzipped or plain text"""
-#     if file_path.suffix == ".gz":
-#         return gzip.open(file_path, "rt")
-#     else:
-#         return open(file_path, "r")
+    # anno_subset.write_csv(outpath, separator="\t", include_header=True)
 
 
 def open_fasta(file_path: Path) -> TextIOWrapper:
@@ -954,49 +947,43 @@ def find_fasta_file_from_index(
 
 def process_target_genes(args: argparse.Namespace) -> None:
     """Handles processing input depending on what arguments were parsed"""
-    # # Case 1: Passing list of genes of interest with general gff parent dir
-    # if args.gene_list and args.data_dir.is_dir():
-    #     with open(args.gene_list) as target_file:
-    #         for line in target_file:
-    #             gene_name = line.rstrip()
-    #             target_name = gene_name.split("___")[0]
-    #             gff_file = find_gff_file(args.data_dir, target_name)
-    #             extract_gene_neighbourhood(args, gene_name, gff_file)
-    # # Case 2: Passing singular gene of interest with general gff parent dir
-    # if args.gene_name and args.data_dir.is_dir():
-    #     gene_name = args.gene_name
-    #     target_name = gene_name.split("___")[0]
-    #     gff_file = find_gff_file(args.data_dir, target_name)
-    #     extract_gene_neighbourhood(args, gene_name, gff_file)
-
-    # use index
-    pickle_file = Path("./globdb_file_index.pkl")
-
-    if pickle_file.is_file():
-        print("GlobDB index exists, reading...")
-        with open(pickle_file, "rb") as f:
-            file_index = pickle.load(f)
+    # Read or write index file of GlobDB
+    if args.index_path:
+        pickle_file = args.index_path
+        if pickle_file.is_file():
+            print("GlobDB index exists, reading...")
+            with open(pickle_file, "rb") as f:
+                file_index = pickle.load(f)
     else:
-        print("Index not found, writing index from input data_dir. May take a while...")
+        print("Writing index from GlobDB dir provided. May take a while...")
+        new_pickle_file = "./globdb_index.pkl"
         file_index = build_file_index(args.data_dir)
-        with open(pickle_file, "wb") as f:
+        with open(new_pickle_file, "wb") as f:
             pickle.dump(file_index, f)
-            print("Index written to pickle file")
+            print(f"Index written to {new_pickle_file} in current directory")
 
-    if args.gene_list and args.data_dir.is_dir():
+    # Process target genes from target list
+    if args.gene_list:
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
                 print(f"Searching for {gene_name}")
                 target_name = gene_name.split("___")[0]
-                # gff_file = find_gff_file(args.data_dir, target_name)
                 gff_file = find_gff_file_from_index(file_index, target_name)
                 anno_file = find_annotation_file_from_index(file_index, target_name)
                 fasta_file = find_fasta_file_from_index(file_index, target_name)
-                # with open_gzipd_gff(gff_file) as gff_file_handle:
                 extract_gene_neighbourhood(
                     args, gene_name, gff_file, anno_file, fasta_file
                 )
+    # Or process single target
+    if args.gene_name:
+        gene_name = args.gene_name.rstrip()
+        print(f"Searching for {gene_name}")
+        target_name = gene_name.split("___")[0]
+        gff_file = find_gff_file_from_index(file_index, target_name)
+        anno_file = find_annotation_file_from_index(file_index, target_name)
+        fasta_file = find_fasta_file_from_index(file_index, target_name)
+        extract_gene_neighbourhood(args, gene_name, gff_file, anno_file, fasta_file)
 
 
 def main():
