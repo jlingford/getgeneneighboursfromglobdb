@@ -20,6 +20,8 @@ Control flow:
 # imports
 from ast import List
 from io import TextIOWrapper
+from os import path
+import pickle
 import gzip
 import logging
 import argparse
@@ -30,6 +32,8 @@ import polars as pl
 import seaborn as sns
 from BCBio import GFF
 from pathlib import Path
+from typing import TextIO
+from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import matplotlib.pyplot as plt
@@ -86,8 +90,8 @@ def parse_arguments() -> argparse.Namespace:
         dest="data_dir",
         type=Path,
         required=True,
-        metavar="FILE|DIR",
-        help="Path to .gff file OR path to base of dir containing .gff files (required)",
+        metavar="DIR",
+        help="Path to .gff base of dir containing .gff files (required)",
     )
 
     parser.add_argument(
@@ -106,10 +110,10 @@ def parse_arguments() -> argparse.Namespace:
         "--upstream",
         dest="upstream_window",
         type=int,
-        default=2500,
+        default=5000,
         required=False,
         metavar="INT",
-        help="Size of window (in base pairs) upstream of GOI [Default: 10000]",
+        help="Size of window (in base pairs) upstream of GOI [Default: 5000]",
     )
 
     parser.add_argument(
@@ -117,10 +121,10 @@ def parse_arguments() -> argparse.Namespace:
         "--downstream",
         dest="downstream_window",
         type=int,
-        default=2500,
+        default=5000,
         required=False,
         metavar="INT",
-        help="Size of window (in base pairs) downstream of GOI [Default: 10000]",
+        help="Size of window (in base pairs) downstream of GOI [Default: 5000]",
     )
 
     parser.add_argument(
@@ -223,7 +227,10 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def replace_gff_attributes(
-    args: argparse.Namespace, gene_name: str, gff_file: Path, annotation_file: Path
+    args: argparse.Namespace,
+    gene_name: str,
+    gff_file: Path,
+    annotation_file: Path,
 ) -> pl.DataFrame:
     """Rewrite the attributes column of the gff file with KOfam annotation information instead of the default COG20_FUNCTION annotations"""
     # params
@@ -311,18 +318,21 @@ def replace_gff_attributes(
 
 
 def extract_gene_neighbourhood(
-    args: argparse.Namespace, gene_name: str, gff_file: Path
+    args: argparse.Namespace,
+    gene_name: str,
+    gff_file: Path,
+    anno_file: Path,
+    fasta_file: Path,
 ) -> None:
     """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
     # params
-    gff_file = gff_file  # The input gff file
-    output_dir = args.output_dir  # Your output file
     gene_name = gene_name
-    genome_name = gene_name.split("___")[0]
+    gff_file = gff_file  # The input gff file
+    anno_file = anno_file
+    fasta_file = fasta_file
+    output_dir = args.output_dir  # Your output file
     upstream_window = args.upstream_window  # Size of window upstream/downstream
     downstream_window = args.downstream_window  # Size of window upstream/downstream
-
-    anno_file = find_annotation_file(args.data_dir, genome_name)
 
     # load gff dataframe
     if args.use_kofam_annotation is True:
@@ -446,8 +456,6 @@ def extract_gene_neighbourhood(
     # Execute downstream functions, contigent on args:
 
     # call nife ssu extractor
-    target_name = gene_name.split("___")[0]
-    fasta_file = find_fasta_file(args.data_dir, target_name)
     extract_nife_ssu(args, gene_name, gff_subset, fasta_file)
 
     # plot gene neighbourhood figure
@@ -482,6 +490,7 @@ def extract_nife_ssu(
     upstream_window = args.upstream_window  # Size of window upstream/downstream
     downstream_window = args.downstream_window  # Size of window upstream/downstream
 
+    # WARN: hardcoded HMM annotation codes
     codes_of_interest = [
         "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
         "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
@@ -508,7 +517,7 @@ def extract_nife_ssu(
     window_start = max(start - upstream_window, 0)
     window_end = end + downstream_window
 
-    # --- Extract neighbourhood ---
+    # extract neighbourhood
     neighbours = gff.filter(
         (pl.col("seqid") == scaffold)
         & (pl.col("start") <= window_end)
@@ -516,7 +525,7 @@ def extract_nife_ssu(
         & (pl.col("strand") == strand)
     )
 
-    # --- Identify candidate matching codes ---
+    # identify candidate matching codes
     candidates = neighbours.filter(
         pl.any_horizontal(
             [pl.col("attributes").str.contains(code) for code in codes_of_interest]
@@ -524,7 +533,7 @@ def extract_nife_ssu(
     )
 
     if not candidates.is_empty():
-        # Choose the closest neighbour (e.g., smallest distance to target)
+        # choose the closest nife ssu neighbour (i.e. smallest distance to target)
         candidates = candidates.with_columns(
             pl.when(pl.col("start") > end)
             .then(pl.col("start") - end)
@@ -533,7 +542,7 @@ def extract_nife_ssu(
         )
         closest = candidates.sort("distance").head(1)
 
-        # --- Extract gene ID from attributes ---
+        # extract gene ID from attributes col
         ssu_id = (
             closest.select(
                 pl.col("attributes").str.extract_groups(r"ID=([^;]+)").struct.field("1")
@@ -542,12 +551,12 @@ def extract_nife_ssu(
             .to_list()[0]
         )
         # make output path
-        outpath1 = Path(output_dir) / gene_name / f"{lsu_id}___NiFe-SSU-{ssu_id}.faa"
+        outpath1 = (
+            Path(output_dir) / gene_name / f"{ssu_id}-NiFe_SSU_partner_of-{lsu_id}.faa"
+        )
         outpath1.parent.mkdir(exist_ok=True, parents=True)
         # make other output path
-        outpath2 = (
-            Path(output_dir) / gene_name / f"{lsu_id}___NiFe-SSU-{ssu_id}-Dimer.faa"
-        )
+        outpath2 = Path(output_dir) / gene_name / f"{lsu_id}-{ssu_id}-NiFe_LSU_SSU.faa"
         outpath2.parent.mkdir(exist_ok=True, parents=True)
 
         # find subset of fasta file based on gene neighbourhood ids
@@ -563,7 +572,7 @@ def extract_nife_ssu(
             with open(outpath2, "w") as f:
                 SeqIO.write(combined_records, f, "fasta")
     else:
-        print(f"No neighbours near {lsu_id} match codes {codes_of_interest}")
+        print(f"No neighbours near {lsu_id} match any NiFe SSU annotation codes")
 
 
 def fasta_ssu_extract(
@@ -842,28 +851,38 @@ def annotation_extract(
     anno_subset.collect().write_csv(outpath, separator="\t", include_header=True)
 
 
-def find_gff_file(input_path: Path, target_name: str) -> Path:
-    """Find target .gff file in input directory based on name of gene of interest"""
-    pattern = f"{target_name}*.gff*"
-    for file_match in input_path.rglob(pattern):
-        return file_match
-    raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-
-
-def find_annotation_file(input_path: Path, target_name: str) -> Path:
-    """Find target annotation .tsv file in input directory based on name of gene of interest"""
-    pattern = f"{target_name}*.tsv*"
-    for file_match in input_path.rglob(pattern):
-        return file_match
-    raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
-
-
-def find_fasta_file(input_path: Path, target_name: str) -> Path:
-    """Find target .faa (or .fasta) file in input directory based on name of gene of interest"""
-    pattern = f"{target_name}*.faa*"
-    for file_match in input_path.rglob(pattern):
-        return file_match
-    raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
+# TODO: remove old functions based on rglob
+# def find_gff_file(input_path: Path, target_name: str) -> Path:
+#     """Find target .gff file in input directory based on name of gene of interest"""
+#     pattern = f"{target_name}*.gff*"
+#     for file_match in input_path.rglob(pattern):
+#         print(file_match)
+#         return file_match
+#     raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
+#
+#
+# def find_annotation_file(input_path: Path, target_name: str) -> Path:
+#     """Find target annotation .tsv file in input directory based on name of gene of interest"""
+#     pattern = f"{target_name}*.tsv*"
+#     for file_match in input_path.rglob(pattern):
+#         return file_match
+#     raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
+#
+#
+# def find_fasta_file(input_path: Path, target_name: str) -> Path:
+#     """Find target .faa (or .fasta) file in input directory based on name of gene of interest"""
+#     pattern = f"{target_name}*.faa*"
+#     for file_match in input_path.rglob(pattern):
+#         return file_match
+#     raise FileNotFoundError(f"Could not find target file with name: {target_name}.")
+#
+#
+# def open_gzipd_gff(file_path: Path) -> TextIO:
+#     """Open a .gff file that might be gzipped or plain text"""
+#     if file_path.suffix == ".gz":
+#         return gzip.open(file_path, "rt")
+#     else:
+#         return open(file_path, "r")
 
 
 def open_fasta(file_path: Path) -> TextIOWrapper:
@@ -874,22 +893,110 @@ def open_fasta(file_path: Path) -> TextIOWrapper:
         return open(file_path, "r")
 
 
+def build_file_index(root_dir: Path) -> dict[str, list[Path]]:
+    """Build index of mapping filenames to filepaths"""
+    index = defaultdict(list)
+    for path in root_dir.rglob("*"):
+        if path.is_file():
+            index[path.name].append(path.resolve())
+    return index
+
+
+def find_gff_file_from_index(
+    file_index: dict[str, list[Path]], target_name: str
+) -> Path:
+    """Use prebuilt index to find gff file of interest"""
+    matches = [
+        path
+        for filename, paths in file_index.items()
+        if filename == f"{target_name}_cog.gff"
+        or filename == f"{target_name}_cog.gff.gz"
+        for path in paths
+    ]
+    if not matches:
+        raise FileNotFoundError(f"No file found for {target_name}.")
+    print(f"gff file found: {matches[0]}")
+    return matches[0]
+
+
+def find_annotation_file_from_index(
+    file_index: dict[str, list[Path]], target_name: str
+) -> Path:
+    """Use prebuilt index to find annotation file of interest"""
+    matches = [
+        path
+        for filename, paths in file_index.items()
+        if filename == f"{target_name}_annotations.tsv"
+        or filename == f"{target_name}_annotations.tsv.gz"
+        for path in paths
+    ]
+    if not matches:
+        raise FileNotFoundError(f"No file found for {target_name}.")
+    print(f"annotation file found: {matches[0]}")
+    return matches[0]
+
+
+def find_fasta_file_from_index(
+    file_index: dict[str, list[Path]], target_name: str
+) -> Path:
+    """Use prebuilt index to find fasta file of interest"""
+    matches = [
+        path
+        for filename, paths in file_index.items()
+        if filename == f"{target_name}.faa" or filename == f"{target_name}.faa.gz"
+        for path in paths
+    ]
+    if not matches:
+        raise FileNotFoundError(f"No file found for {target_name}.")
+    print(f"fasta file found: {matches[0]}")
+    return matches[0]
+
+
 def process_target_genes(args: argparse.Namespace) -> None:
     """Handles processing input depending on what arguments were parsed"""
-    # Case 1: Passing list of genes of interest with general gff parent dir
+    # # Case 1: Passing list of genes of interest with general gff parent dir
+    # if args.gene_list and args.data_dir.is_dir():
+    #     with open(args.gene_list) as target_file:
+    #         for line in target_file:
+    #             gene_name = line.rstrip()
+    #             target_name = gene_name.split("___")[0]
+    #             gff_file = find_gff_file(args.data_dir, target_name)
+    #             extract_gene_neighbourhood(args, gene_name, gff_file)
+    # # Case 2: Passing singular gene of interest with general gff parent dir
+    # if args.gene_name and args.data_dir.is_dir():
+    #     gene_name = args.gene_name
+    #     target_name = gene_name.split("___")[0]
+    #     gff_file = find_gff_file(args.data_dir, target_name)
+    #     extract_gene_neighbourhood(args, gene_name, gff_file)
+
+    # use index
+    pickle_file = Path("./globdb_file_index.pkl")
+
+    if pickle_file.is_file():
+        print("GlobDB index exists, reading...")
+        with open(pickle_file, "rb") as f:
+            file_index = pickle.load(f)
+    else:
+        print("Index not found, writing index from input data_dir. May take a while...")
+        file_index = build_file_index(args.data_dir)
+        with open(pickle_file, "wb") as f:
+            pickle.dump(file_index, f)
+            print("Index written to pickle file")
+
     if args.gene_list and args.data_dir.is_dir():
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
+                print(f"Searching for {gene_name}")
                 target_name = gene_name.split("___")[0]
-                gff_file = find_gff_file(args.data_dir, target_name)
-                extract_gene_neighbourhood(args, gene_name, gff_file)
-    # Case 2: Passing singular gene of interest with general gff parent dir
-    if args.gene_name and args.data_dir.is_dir():
-        gene_name = args.gene_name
-        target_name = gene_name.split("___")[0]
-        gff_file = find_gff_file(args.data_dir, target_name)
-        extract_gene_neighbourhood(args, gene_name, gff_file)
+                # gff_file = find_gff_file(args.data_dir, target_name)
+                gff_file = find_gff_file_from_index(file_index, target_name)
+                anno_file = find_annotation_file_from_index(file_index, target_name)
+                fasta_file = find_fasta_file_from_index(file_index, target_name)
+                # with open_gzipd_gff(gff_file) as gff_file_handle:
+                extract_gene_neighbourhood(
+                    args, gene_name, gff_file, anno_file, fasta_file
+                )
 
 
 def main():
