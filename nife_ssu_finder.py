@@ -41,6 +41,60 @@ from dna_features_viewer import BiopythonTranslator
 from itertools import combinations_with_replacement
 
 
+# WARN: hardcoded HMM annotation codes for NiFe LSU
+NIFE_LSU_CODES = [
+    "PF00374.23",  # Nickel-dependent hydrogenase
+    "COG0374",  # Ni,Fe-hydrogenase I large subunit (HyaB) (PDB:6FPI) (PUBMED:25905665)
+    "COG3259",  # Coenzyme F420-reducing hydrogenase, alpha subunit (FrhA) (PDB:3ZFS)
+    "COG4042",  # Energy-converting hydrogenase Eha subunit A (EhaA) (PUBMED:19495416)
+    "COG3261",  # Ni,Fe-hydrogenase III large subunit (HycE2) (PDB:6CFW)
+]
+
+# WARN: hardcoded HMM annotation codes for NiFe SSU
+NIFE_SSU_CODES = [
+    "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
+    "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
+    "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
+    "COG0377",  # NADH:ubiquinone oxidoreductase 20 kD subunit (chain B) or related Fe-S oxidoreductase (NuoB) (PDB:2FUG) (PUBMED:25941396)
+    "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
+    "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
+    "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
+    "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
+    "K14113",  # energy-converting hydrogenase B subunit D
+    "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
+    "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
+    "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
+    "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
+]
+
+# WARN: hardcoded HMM annotation codes for NiFe FrhD / MvhD subunit (group 3 NiFe)
+NIFE_FRHB_CODES = [
+    "COG1908",  # Coenzyme F420-reducing hydrogenase, delta subunit (MvhD) (PDB:5ODC)
+    "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
+    "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
+    "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+]
+
+# WARN: hardcoded HMM annotation codes for NiFe group 1 partners
+NIFE_PARTNER_CODES_GROUP1 = [
+    "COG5557",  # membrane subunit HybB
+    "COG3658",  # cytochrome b
+    "COG1969",  # HyaC cytochrome b
+    "PF14522.10",  # Cytochrome c7 and related cytochrome c
+    "PF14537.10",  # Cytochrome c3
+    "PF14537.10",  # Cytochrome c3
+]
+
+# WARN: hardcoded HMM annotation codes for NiFe group 1 partners
+NIFE_PARTNER_CODES_GROUP2 = []
+
+# WARN: hardcoded HMM annotation codes for NiFe group 1 partners
+NIFE_PARTNER_CODES_GROUP3 = []
+
+# WARN: hardcoded HMM annotation codes for NiFe group 1 partners
+NIFE_PARTNER_CODES_GROUP4 = []
+
+
 def parse_arguments() -> argparse.Namespace:
     """Parse arguments to script"""
     parser = argparse.ArgumentParser(
@@ -496,23 +550,6 @@ def extract_nife_ssu(
     upstream_window = args.upstream_window  # Size of window upstream/downstream
     downstream_window = args.downstream_window  # Size of window upstream/downstream
 
-    # WARN: hardcoded HMM annotation codes
-    codes_of_interest = [
-        "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
-        "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
-        "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
-        "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
-        "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
-        "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
-        "K14113",  # energy-converting hydrogenase B subunit D
-        "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
-        "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
-        "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
-        "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
-        "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
-        "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
-    ]
-
     goi = gff.filter(pl.col("attributes").str.contains(f"ID={lsu_id}"))
 
     scaffold = goi.item(0, "seqid")
@@ -534,7 +571,7 @@ def extract_nife_ssu(
     # identify candidate matching codes
     candidates = neighbours.filter(
         pl.any_horizontal(
-            [pl.col("attributes").str.contains(code) for code in codes_of_interest]
+            [pl.col("attributes").str.contains(code) for code in NIFE_SSU_CODES]
         )
     )
 
@@ -694,26 +731,6 @@ def plot_gene_neighbourhood(
     # gff_input = gff_input_file
     window_start = args.upstream_window
     window_end = args.downstream_window
-    # WARN: annotation code list is hardcoded... change that
-    # TODO: provide a way to update this list from CLI args
-    anno_codes_targets = [
-        "COG0374",
-        "COG3259",
-        "COG4042",
-        "COG3261",
-    ]  # annotation codes associated with NiFe LSU
-    anno_codes_neighbours_close = [
-        "COG1035",
-        "COG1740",
-        "COG1908",
-        "COG1941",
-        "COG3260",
-    ]  # annotation codes associated with NiFe SSU & FrhD/MvhD
-    anno_codes_neighbours_other = [
-        "COG5557",  # membrane subunit HybB
-        "COG3658",  # cytochrome b
-        "COG1969",  # HyaC cytochrome b
-    ]
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
     # TODO: update this with more colours/options
@@ -726,12 +743,12 @@ def plot_gene_neighbourhood(
                 if "Name" in feature.qualifiers:
                     gene_anno = feature.qualifiers["Name"][0]
                     # colour genes that match annotations of familiar neighbours blue
-                    if gene_anno in anno_codes_neighbours_other:
+                    if gene_anno in NIFE_PARTNER_CODES_GROUP1:
                         return "#cba6f7"
-                    if gene_anno in anno_codes_neighbours_close:
+                    if gene_anno in NIFE_SSU_CODES or NIFE_FRHB_CODES:
                         return "#89b4fa"
                     # colour expected target with correct annotation as green
-                    if gene_anno in anno_codes_targets:
+                    if gene_anno in NIFE_LSU_CODES:
                         return "#a6e3a1"
                 if "product" in feature.qualifiers:
                     gene_desc = feature.qualifiers["product"][0]
