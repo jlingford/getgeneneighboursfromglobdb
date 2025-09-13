@@ -44,10 +44,22 @@ from itertools import combinations_with_replacement
 # WARN: hardcoded HMM annotation codes for NiFe LSU
 NIFE_LSU_CODES = [
     "PF00374.23",  # Nickel-dependent hydrogenase
+    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
+    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
+    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
+    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K14086",  # ech hydrogenase subunit A
+    "K06281",  # hydrogenase large subunit [EC:1.12.99.6]
+    "K00436",  # NAD-reducing hydrogenase large subunit [EC:1.12.1.2]
+    "K14126",  # F420-non-reducing hydrogenase large subunit [EC:1.12.99.- 1.8.98.5]
     "COG0374",  # Ni,Fe-hydrogenase I large subunit (HyaB) (PDB:6FPI) (PUBMED:25905665)
     "COG3259",  # Coenzyme F420-reducing hydrogenase, alpha subunit (FrhA) (PDB:3ZFS)
     "COG4042",  # Energy-converting hydrogenase Eha subunit A (EhaA) (PUBMED:19495416)
     "COG3261",  # Ni,Fe-hydrogenase III large subunit (HycE2) (PDB:6CFW)
+    "COG0649",  # NADH:ubiquinone oxidoreductase 49 kD subunit (chain D) (NuoD) (PDB:2FUG)
+    "K13378",  # NADH-quinone oxidoreductase subunit C/D [EC:7.1.1.2]
+    "K00333",  # NADH-quinone oxidoreductase subunit D [EC:7.1.1.2]
+    "K00338",  # NADH-quinone oxidoreductase subunit I [EC:7.1.1.2]
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe SSU
@@ -57,11 +69,13 @@ NIFE_SSU_CODES = [
     "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
     "COG0377",  # NADH:ubiquinone oxidoreductase 20 kD subunit (chain B) or related Fe-S oxidoreductase (NuoB) (PDB:2FUG) (PUBMED:25941396)
     "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
+    "COG1941",  # Coenzyme F420-reducing hydrogenase, gamma subunit (FrhG) (PDB:5ODC)
     "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
     "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
     "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
     "K14113",  # energy-converting hydrogenase B subunit D
     "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
+    "K14128",  # F420-non-reducing hydrogenase small subunit [EC:1.12.99.- 1.8.98.5]
     "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
     "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
@@ -69,6 +83,7 @@ NIFE_SSU_CODES = [
 
 # WARN: hardcoded HMM annotation codes for NiFe FrhD / MvhD subunit (group 3 NiFe)
 NIFE_FRHB_CODES = [
+    "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
     "COG1908",  # Coenzyme F420-reducing hydrogenase, delta subunit (MvhD) (PDB:5ODC)
     "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
     "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
@@ -77,12 +92,15 @@ NIFE_FRHB_CODES = [
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 NIFE_PARTNER_CODES_GROUP1 = [
-    "COG5557",  # membrane subunit HybB
-    "COG3658",  # cytochrome b
-    "COG1969",  # HyaC cytochrome b
+    "COG5557",  # Ni/Fe-hydrogenase 2 integral membrane subunit HybB (HybB)
+    "COG3658",  # Cytochrome b subunit of Ni2+-dependent hydrogenase (CytB)
+    "COG1969",  # Ni,Fe-hydrogenase I cytochrome b subunit (HyaC) (PDB:4GD3)
+    "K03620",  # Ni/Fe-hydrogenase 1 B-type cytochrome subunit
+    "K04013",  # cytochrome c-type protein NrfB
     "PF14522.10",  # Cytochrome c7 and related cytochrome c
     "PF14537.10",  # Cytochrome c3
     "PF14537.10",  # Cytochrome c3
+    "PF01292.24",  # Prokaryotic cytochrome b561
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
@@ -93,6 +111,23 @@ NIFE_PARTNER_CODES_GROUP3 = []
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 NIFE_PARTNER_CODES_GROUP4 = []
+
+# WARN: hardcoded HMM annotation codes for NiFe group 1 partners
+NIFE_MATURATION_CODES = [
+    "COG0375",  # Hydrogenase maturation factor HypA/HybF, metallochaperone involved in Ni insertion (HybF) (PDB:3A43) (PUBMED:16817932)	2.85e-59
+    "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
+    "COG0068",  # Hydrogenase maturation factor HypF (carbamoyltransferase) (HypF) (PDB:3TSP)
+    "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
+    "COG0298",  # Hydrogenase maturation factor HybG, HypC/HupF family (HypC) (PDB:2OT2)
+    "COG0309",  # Carbamoyl dehydratase HypE (hydrogenase maturation factor) (HypE) (PDB:2I6R) (PUBMED:28618091)
+    "K04651",  # hydrogenase nickel incorporation protein HypA/HybF	4e-40
+    "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
+    "K04656",  # hydrogenase maturation protein HypF
+    "K07321",  # CO dehydrogenase maturation factor
+    "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
+    "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA	1.2e-36
+    "PF01924.20",  # Hydrogenase formation hypA family
+]
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -745,7 +780,9 @@ def plot_gene_neighbourhood(
                     # colour genes that match annotations of familiar neighbours blue
                     if gene_anno in NIFE_PARTNER_CODES_GROUP1:
                         return "#cba6f7"
-                    if gene_anno in NIFE_SSU_CODES or NIFE_FRHB_CODES:
+                    if gene_anno in NIFE_FRHB_CODES:
+                        return "#b4befe"
+                    if gene_anno in NIFE_SSU_CODES:
                         return "#89b4fa"
                     # colour expected target with correct annotation as green
                     if gene_anno in NIFE_LSU_CODES:
@@ -753,6 +790,8 @@ def plot_gene_neighbourhood(
                 if "product" in feature.qualifiers:
                     gene_desc = feature.qualifiers["product"][0]
                     if "maturation" in gene_desc:
+                        return "#f9e2af"
+                    if "chaperone" in gene_desc:
                         return "#f9e2af"
                 # colour target gene red if it doesn't match anything else
                 if target_gene_id == gene_id:
@@ -882,7 +921,7 @@ def annotation_extract(
 
     # create subset of annotation table based on gene_ids list, and sorted based on gene_ids and evalues
     anno_subset = anno.filter(pl.col("gene_callers_id").is_in(gene_ids)).sort(
-        ["gene_callers_id", "e_value"]
+        by=["gene_callers_id", "e_value"], descending=[False, False]
     )
     # anno_subset = anno.filter(pl.col("gene_callers_id").is_in(gene_ids))
 
