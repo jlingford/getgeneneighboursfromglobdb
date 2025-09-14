@@ -43,64 +43,67 @@ from itertools import combinations_with_replacement
 
 # WARN: hardcoded HMM annotation codes for NiFe LSU
 NIFE_LSU_CODES = [
-    "PF00374.23",  # Nickel-dependent hydrogenase
-    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
-    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
-    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
-    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
-    "K14086",  # ech hydrogenase subunit A
-    "K06281",  # hydrogenase large subunit [EC:1.12.99.6]
-    "K00436",  # NAD-reducing hydrogenase large subunit [EC:1.12.1.2]
-    "K14126",  # F420-non-reducing hydrogenase large subunit [EC:1.12.99.- 1.8.98.5]
     "COG0374",  # Ni,Fe-hydrogenase I large subunit (HyaB) (PDB:6FPI) (PUBMED:25905665)
-    "COG3259",  # Coenzyme F420-reducing hydrogenase, alpha subunit (FrhA) (PDB:3ZFS)
-    "COG4042",  # Energy-converting hydrogenase Eha subunit A (EhaA) (PUBMED:19495416)
-    "COG3261",  # Ni,Fe-hydrogenase III large subunit (HycE2) (PDB:6CFW)
     "COG0649",  # NADH:ubiquinone oxidoreductase 49 kD subunit (chain D) (NuoD) (PDB:2FUG)
-    "K13378",  # NADH-quinone oxidoreductase subunit C/D [EC:7.1.1.2]
+    "COG3259",  # Coenzyme F420-reducing hydrogenase, alpha subunit (FrhA) (PDB:3ZFS)
+    "COG3261",  # Ni,Fe-hydrogenase III large subunit (HycE2) (PDB:6CFW)
+    "COG4042",  # Energy-converting hydrogenase Eha subunit A (EhaA) (PUBMED:19495416)
     "K00333",  # NADH-quinone oxidoreductase subunit D [EC:7.1.1.2]
     "K00338",  # NADH-quinone oxidoreductase subunit I [EC:7.1.1.2]
+    "K00436",  # NAD-reducing hydrogenase large subunit [EC:1.12.1.2]
+    "K00440",  # coenzyme F420 hydrogenase subunit alpha [EC:1.12.98.1]
+    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K06281",  # hydrogenase large subunit [EC:1.12.99.6]
+    "K13378",  # NADH-quinone oxidoreductase subunit C/D [EC:7.1.1.2]
+    "K14086",  # ech hydrogenase subunit A
+    "K14126",  # F420-non-reducing hydrogenase large subunit [EC:1.12.99.- 1.8.98.5]
+    "K23549",  # uptake hydrogenase large subunit [EC:1.12.99.6]
+    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
+    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
+    "PF00374.23",  # Nickel-dependent hydrogenase
+    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe SSU
 NIFE_SSU_CODES = [
-    "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
-    "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
-    "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
     "COG0377",  # NADH:ubiquinone oxidoreductase 20 kD subunit (chain B) or related Fe-S oxidoreductase (NuoB) (PDB:2FUG) (PUBMED:25941396)
-    "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
+    "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
     "COG1941",  # Coenzyme F420-reducing hydrogenase, gamma subunit (FrhG) (PDB:5ODC)
+    "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
     "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
-    "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
+    "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
     "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
+    "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
     "K14113",  # energy-converting hydrogenase B subunit D
     "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
     "K14128",  # F420-non-reducing hydrogenase small subunit [EC:1.12.99.- 1.8.98.5]
     "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
+    "K18007",  # NAD-reducing hydrogenase small subunit [EC:1.12.1.2]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
-    "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
+    "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
+    "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe FrhD / MvhD subunit (group 3 NiFe)
 NIFE_FRHB_CODES = [
-    "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
-    "COG1908",  # Coenzyme F420-reducing hydrogenase, delta subunit (MvhD) (PDB:5ODC)
     "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
+    "COG1908",  # Coenzyme F420-reducing hydrogenase, delta subunit (MvhD) (PDB:5ODC)
     "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
     "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+    "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 NIFE_PARTNER_CODES_GROUP1 = [
-    "COG5557",  # Ni/Fe-hydrogenase 2 integral membrane subunit HybB (HybB)
-    "COG3658",  # Cytochrome b subunit of Ni2+-dependent hydrogenase (CytB)
     "COG1969",  # Ni,Fe-hydrogenase I cytochrome b subunit (HyaC) (PDB:4GD3)
+    "COG3658",  # Cytochrome b subunit of Ni2+-dependent hydrogenase (CytB)
+    "COG5557",  # Ni/Fe-hydrogenase 2 integral membrane subunit HybB (HybB)
     "K03620",  # Ni/Fe-hydrogenase 1 B-type cytochrome subunit
     "K04013",  # cytochrome c-type protein NrfB
+    "PF01292.24",  # Prokaryotic cytochrome b561
     "PF14522.10",  # Cytochrome c7 and related cytochrome c
     "PF14537.10",  # Cytochrome c3
     "PF14537.10",  # Cytochrome c3
-    "PF01292.24",  # Prokaryotic cytochrome b561
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
@@ -114,19 +117,21 @@ NIFE_PARTNER_CODES_GROUP4 = []
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 NIFE_MATURATION_CODES = [
-    "COG0375",  # Hydrogenase maturation factor HypA/HybF, metallochaperone involved in Ni insertion (HybF) (PDB:3A43) (PUBMED:16817932)	2.85e-59
-    "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
     "COG0068",  # Hydrogenase maturation factor HypF (carbamoyltransferase) (HypF) (PDB:3TSP)
-    "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
     "COG0298",  # Hydrogenase maturation factor HybG, HypC/HupF family (HypC) (PDB:2OT2)
     "COG0309",  # Carbamoyl dehydratase HypE (hydrogenase maturation factor) (HypE) (PDB:2I6R) (PUBMED:28618091)
-    "K04651",  # hydrogenase nickel incorporation protein HypA/HybF	4e-40
+    "COG0375",  # Hydrogenase maturation factor HypA/HybF, metallochaperone involved in Ni insertion (HybF) (PDB:3A43) (PUBMED:16817932)	2.85e-59
+    "COG0378",  # Hydrogenase/urease maturation factor HypB, Ni2+-binding GTPase (HypB) (PDB:2HF8) (PUBMED:24338018;23899293)
+    "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
+    "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
     "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
+    "K04651",  # hydrogenase nickel incorporation protein HypA/HybF	4e-40
+    "K04652",  # hydrogenase nickel incorporation protein HypB
     "K04656",  # hydrogenase maturation protein HypF
     "K07321",  # CO dehydrogenase maturation factor
-    "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
     "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA	1.2e-36
     "PF01924.20",  # Hydrogenase formation hypA family
+    "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
 ]
 
 
@@ -651,51 +656,6 @@ def extract_nife_ssu(
                 SeqIO.write(combined_records, f, "fasta")
     else:
         print(f"No neighbours near {lsu_id} match any NiFe SSU annotation codes")
-
-
-def fasta_ssu_extract(
-    args: argparse.Namespace,
-    gene_name: str,
-    fasta_path: Path,
-    ssu_candidates: list,
-) -> None:
-    """Extract NiFe SSU fasta sequence and output it, along with its LSU partner in another fasta file"""
-    # params
-    output_dir = args.output_dir
-    fasta_file = fasta_path
-    gene_name = gene_name
-    gene_ids = ssu_candidates
-
-    # make output dir
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours.faa"
-    if outpath.exists():
-        logging.warning(f"Writing over existing fastas: {outpath.name}")
-    outpath.parent.mkdir(exist_ok=True, parents=True)
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(fasta_file) as handle:
-        all_fastas = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
-        with open(outpath, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
-
-    # Do the same for subset of fasta list
-    # make output dir
-    outpath2 = (
-        Path(output_dir) / gene_name / f"{gene_name}___gene_neighbours_subset.faa"
-    )
-    if outpath2.exists():
-        logging.warning(f"Writing over existing fastas: {outpath2.name}")
-    outpath2.parent.mkdir(exist_ok=True, parents=True)
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(fasta_file) as handle:
-        all_fastas = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [
-            record for record in all_fastas if record.id in gene_ids_subset
-        ]
-        with open(outpath2, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
 
 
 def fasta_neighbourhood_extract(
