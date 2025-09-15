@@ -21,6 +21,7 @@ Control flow:
 from ast import List
 from io import TextIOWrapper
 from os import path
+from string import ascii_uppercase
 import pickle
 import gzip
 import logging
@@ -291,24 +292,45 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--pairwise_fastas",
-        dest="add_pairwise_fastas",
+        "--pairwise_set1",
+        dest="pairwise_set1",
         action="store_true",
-        help="Option to generate fasta files containing pairwise combinations of all sequences in gene neighbourhood [Default: off]",
+        help="Generate pairwise combinations of all sequences in gene neighbourhood, excluding maturation factors [Default: off]",
+    )
+
+    parser.add_argument(
+        "--pairwise_set2",
+        dest="pairwise_set2",
+        action="store_true",
+        help="Generate pairwise combinations of sequences in gene neighbourhood, but limited to most likely [NiFe] hydrogenase PPI candidates [Default: off]",
     )
 
     parser.add_argument(
         "--chai_fastas",
         dest="chai_fastas",
         action="store_true",
-        help="Option to prepend fasta ID headers with '>protein|' for Chai-1 input [Default: off]",
+        help="Option to generate pairwise fasta combinations for Chai-1 input [Default: off]",
     )
 
     parser.add_argument(
         "--boltz_fastas",
         dest="boltz_fastas",
         action="store_true",
-        help="Option to prepend fasta ID headers with '>A|protein|MSAPATH.a3m' for Boltz-1/2 input [Default: off]",
+        help="Option to format pairwise fasta combinations for Boltz-1/2 input [Default: off]",
+    )
+
+    parser.add_argument(
+        "--colabfold_fastas",
+        dest="colabfold_fastas",
+        action="store_true",
+        help="Option to format pairwise fasta combinations for ColabFold search/batch input [Default: off]",
+    )
+
+    parser.add_argument(
+        "--regular_fastas",
+        dest="regular_fastas",
+        action="store_true",
+        help="Option add pairwise fasta combinations with plain fasta format [Default: on if --chai_fastas|boltz_fastas|colabfold_fastas options are not set]",
     )
 
     anno_args.add_argument(
@@ -329,6 +351,19 @@ def parse_arguments() -> argparse.Namespace:
 
     # Parse arguments into args object
     args = parser.parse_args()
+
+    # check pairwise fasta args
+    if (
+        args.boltz_fastas
+        or args.chai_fastas
+        or args.colabfold_fastas
+        or args.regular_fastas
+        and not args.pairwise_set1
+        or args.pairwise_set2
+    ):
+        parser.error(
+            "--pairwise_set1 or --pairwise_set2 options must be set too alongside the --boltz_fastas, --chai_fastas, --colabfold_fastas, and --regular_fastas options"
+        )
 
     return args
 
@@ -708,75 +743,6 @@ def extract_nife_ssu(
         print(f"No neighbours near {lsu_id} match any NiFe SSU annotation codes")
 
 
-def fasta_neighbourhood_extract(
-    args: argparse.Namespace,
-    gene_name: str,
-    fasta_file: Path,
-    gene_ids_full: list,
-    gene_ids_nomaturation: list,
-    gene_ids_ppi_candidates: list,
-) -> None:
-    """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
-    # params
-    output_dir = args.output_dir
-    fasta_file = fasta_file
-    gene_ids = gene_ids_full
-    gene_ids_nomaturation = gene_ids_nomaturation
-    gene_ids_ppi_candidates = gene_ids_ppi_candidates
-    gene_name = gene_name
-
-    # make output dir
-    outpath1 = Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_all.faa"
-    outpath1.parent.mkdir(exist_ok=True, parents=True)
-
-    # Do the same for subset of fasta list
-    outpath2 = (
-        Path(output_dir)
-        / gene_name
-        / f"{gene_name}-gene_neighbours_nomaturationfactors.faa"
-    )
-    outpath2.parent.mkdir(exist_ok=True, parents=True)
-
-    # Do the same for subset of fasta list
-    outpath3 = (
-        Path(output_dir)
-        / gene_name
-        / f"{gene_name}-gene_neighbours_knownppicandidatesonly.faa"
-    )
-    outpath3.parent.mkdir(exist_ok=True, parents=True)
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(fasta_file) as handle:
-        all_fastas = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
-        with open(outpath1, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(outpath1) as handle:
-        fasta_subset = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [
-            record for record in fasta_subset if record.id in gene_ids_nomaturation
-        ]
-        with open(outpath2, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
-
-    # find subset of fasta file based on gene neighbourhood ids
-    with open_fasta(outpath1) as handle:
-        fasta_subset = SeqIO.parse(handle, "fasta")
-        gene_neighbours = [
-            record for record in fasta_subset if record.id in gene_ids_ppi_candidates
-        ]
-        with open(outpath3, "w") as f:
-            SeqIO.write(gene_neighbours, f, "fasta")
-
-    # generate fasta pairwise combinations:
-    # WARN: only doing it for subset of all gene neighbours
-    # TODO: update this for better arg parsing
-    if args.add_pairwise_fastas is True:
-        fasta_pairwise_generation(args, outpath2, gene_name)
-
-
 def plot_gene_neighbourhood(
     args: argparse.Namespace,
     gene_name: str,
@@ -857,56 +823,99 @@ def plot_gene_neighbourhood(
     plt.close("all")
 
 
-def fasta_pairwise_generation(
-    args: argparse.Namespace, input_fasta: Path, goi_name: str
+def fasta_neighbourhood_extract(
+    args: argparse.Namespace,
+    gene_name: str,
+    fasta_file: Path,
+    gene_ids_full: list,
+    gene_ids_nomaturation: list,
+    gene_ids_ppi_candidates: list,
+) -> None:
+    """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
+    # params
+    output_dir = args.output_dir
+    fasta_file = fasta_file
+    gene_ids = gene_ids_full
+    gene_ids_nomaturation = gene_ids_nomaturation
+    gene_ids_ppi_candidates = gene_ids_ppi_candidates
+    gene_name = gene_name
+
+    # make output file of for all fastas in gene neighbourhood
+    outpath_all = Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_all.faa"
+    # Do the same for subset of fasta list without maturation factors (set1)
+    outpath_set1 = (
+        Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_set1.faa"
+    )
+    # Do the same for subset of fasta list of just best PPI candidates (set2)
+    outpath_set2 = (
+        Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_set2.faa"
+    )
+    outpath_all.parent.mkdir(exist_ok=True, parents=True)
+    outpath_set1.parent.mkdir(exist_ok=True, parents=True)
+    outpath_set2.parent.mkdir(exist_ok=True, parents=True)
+
+    # # output all fastas from the entire gene neighbourhood
+    # with open_fasta(fasta_file) as handle:
+    #     fastafile = SeqIO.parse(handle, "fasta")
+    #     gene_neighbours = [record for record in fastafile if record.id in gene_ids]
+    #     with open(outpath_all, "w") as f:
+    #         SeqIO.write(gene_neighbours, f, "fasta")
+    #
+    # # output all fastas minus the maturation factors (set1)
+    # with open_fasta(outpath_set1) as handle:
+    #     fastafile = SeqIO.parse(handle, "fasta")
+    #     gene_neighbours = [
+    #         record for record in fastafile if record.id in gene_ids_nomaturation
+    #     ]
+    #     with open(outpath_set1, "w") as f:
+    #         SeqIO.write(gene_neighbours, f, "fasta")
+    #
+    # # output just the fastas that are most likley to be NiFe PPI candidates (set2)
+    # with open_fasta(outpath_set2) as handle:
+    #     fastafile = SeqIO.parse(handle, "fasta")
+    #     gene_neighbours = [
+    #         record for record in fastafile if record.id in gene_ids_ppi_candidates
+    #     ]
+    #     with open(outpath_set2, "w") as f:
+    #         SeqIO.write(gene_neighbours, f, "fasta")
+
+    for outpath, gene_set in zip(
+        [outpath_all, outpath_set1, outpath_set2],
+        [gene_ids, gene_ids_nomaturation, gene_ids_ppi_candidates],
+    ):
+        with open_fasta(outpath) as handle:
+            fastafile = SeqIO.parse(handle, "fasta")
+            fasta_set = [record for record in fastafile if record.id in gene_set]
+            with open(outpath, "w") as f:
+                SeqIO.write(fasta_set, f, "fasta")
+
+    # generate fasta pairwise combinations:
+    # WARN: only doing it for subset of all gene neighbours
+    # TODO: update this for better arg parsing
+    if args.pairwise_set1 is True:
+        pairwise_fasta_generation(args, gene_name, outpath_set1, "Set1")
+
+    if args.pairwise_set2 is True:
+        pairwise_fasta_generation(args, gene_name, outpath_set2, "Set2")
+
+
+def pairwise_fasta_generation(
+    args: argparse.Namespace,
+    target_id: str,
+    input_fasta_set: Path,
+    set_num: str,
 ) -> None:
     """Generate multiple fasta files containing pairwise combinations of all gene gene_neighbours"""
     # params
     output_dir = args.output_dir
-    target_id = goi_name
-    input_fasta = input_fasta
 
     # Read all sequences into a list (records)
-    records = list(SeqIO.parse(input_fasta, "fasta"))
-
-    # define local function for finding absolute difference between GOI and neighbouring genes based on GlobDB fasta ID number
-    def dist_from_goi(record: SeqRecord):
-        goi_num = int(target_id.split("___")[1])
-        neighbour_num = int(record.id.split("___")[1])
-        return abs(neighbour_num - goi_num)
-
-    # sort all fasta records by the dist_from_goi function
-    sorted_records = sorted(records, key=dist_from_goi)
-
-    # Modify fasta header IDs of sorted_records for Chai-1 or Boltz input, using the SeqRecord function
-    if args.chai_fastas is True:
-        seq_records = [
-            SeqRecord(
-                seq=record.seq,
-                name=record.id,
-                id=f"protein|{record.id}",
-                description="",
-            )
-            for record in sorted_records
-        ]
-    elif args.boltz_fastas is True:
-        seq_records = [
-            SeqRecord(
-                seq=record.seq,
-                name=record.id,
-                id=f"A|protein|MSAPATH.a3m",
-                description="",
-            )
-            for record in sorted_records
-        ]
-    else:
-        seq_records = sorted_records
+    records = list(SeqIO.parse(input_fasta_set, "fasta"))
 
     # generate fasta pairs using itertools
-    pairs = combinations_with_replacement(seq_records, 2)
+    pairs = combinations_with_replacement(records, 2)
     for i, (rec1, rec2) in enumerate(pairs, start=1):
         # Check if target is in this pair
-        includes_target = target_id in {rec1.name, rec2.name}
         assert isinstance(rec1.name, str)
         assert isinstance(rec2.name, str)
 
@@ -916,19 +925,76 @@ def fasta_pairwise_generation(
         gene2 = rec2.name.split("___")[1]
 
         # Build output file name
-        if includes_target:
-            fname = f"{i:03d}_{genome}___{gene1}-{gene2}_geneofinterest.faa"
-        else:
-            fname = f"{i:03d}_{genome}___{gene1}-{gene2}.faa"
+        faaname = f"{genome}___{gene1}-{gene2}.faa"
+        stemname = f"{genome}___{gene1}-{gene2}"
 
-        # make output dir
-        outpath = Path(output_dir) / target_id / f"Fasta_pairs_{target_id}" / fname
-        if outpath.exists():
-            logging.warning(f"Writing over existing fastas: {outpath.name}")
-        outpath.parent.mkdir(exist_ok=True, parents=True)
+        # write pairwise fastas in chai format
+        if args.chai_fastas is True:
+            chai_records = [
+                SeqRecord(
+                    seq=record.seq,
+                    name=record.id,
+                    id=f"protein|{record.id}",
+                    description="",
+                )
+                for record in records
+            ]
+            outpath = (
+                Path(output_dir)
+                / target_id
+                / f"Chai1_fasta_pairs-{set_num}-{target_id}"
+                / faaname
+            )
+            outpath.parent.mkdir(exist_ok=True, parents=True)
+            SeqIO.write(chai_records, outpath, "fasta")
 
-        # Write the pairwise fasta file
-        SeqIO.write([rec1, rec2], outpath, "fasta")
+        # write pairwise fastas in boltz format
+        if args.boltz_fastas is True:
+            boltz_records = []
+            for chain_id, rec in zip(ascii_uppercase, (rec1, rec2)):
+                boltz_records.append(
+                    SeqRecord(
+                        seq=rec.seq,
+                        name=rec.id,
+                        id=f"{chain_id}|protein|MSAPATH/{stemname}.a3m",
+                        description="",
+                    )
+                )
+            outpath = (
+                Path(output_dir)
+                / target_id
+                / f"Boltz2_fasta_pairs-{set_num}-{target_id}"
+                / faaname
+            )
+            outpath.parent.mkdir(exist_ok=True, parents=True)
+            SeqIO.write(boltz_records, outpath, "fasta")
+
+        # write pairwise fastas in colabfold format
+        if args.colabfold_fastas is True:
+            outpath = (
+                Path(output_dir)
+                / target_id
+                / f"ColabFold_fasta_pairs-{set_num}-{target_id}"
+                / faaname
+            )
+            outpath.parent.mkdir(exist_ok=True, parents=True)
+            with open(outpath, "w") as f:
+                f.write(f">{stemname}\n")
+                f.write(f"{str(rec1.seq)}:\n")
+                f.write(f"{str(rec2.seq)}")
+
+        # write pairwise fastas in a regular format if no special formatting options are set, or add these too if --regular_fastas is set
+        if (
+            args.boltz_fastas and args.chai_fastas and args.colabfold_fastas is not True
+        ) or args.regular_fastas is True:
+            outpath = (
+                Path(output_dir)
+                / target_id
+                / f"Fasta_pairs-{set_num}-{target_id}"
+                / faaname
+            )
+            outpath.parent.mkdir(exist_ok=True, parents=True)
+            SeqIO.write([rec1, rec2], outpath, "fasta")
 
 
 def annotation_extract(
