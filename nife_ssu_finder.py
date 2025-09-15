@@ -137,12 +137,19 @@ NIFE_MATURATION_CODES = [
     "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
     "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
     "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
+    "K03618",  # hydrogenase-1 operon protein HyaF
     "K04651",  # hydrogenase nickel incorporation protein HypA/HybF
     "K04652",  # hydrogenase nickel incorporation protein HypB
+    "K04653",  # hydrogenase expression/formation protein HypC
+    "K04654",  # hydrogenase expression/formation protein HypD
+    "K04655",  # hydrogenase expression/formation protein HypE
     "K04656",  # hydrogenase maturation protein HypF
     "K07321",  # CO dehydrogenase maturation factor
     "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA
+    "PF01455.22",  # HupF/HypC family
     "PF01924.20",  # Hydrogenase formation hypA family
+    "PF02492.23",  # CobW/HypB/UreG, nucleotide-binding domain
+    "PF04809.17",  # HupH hydrogenase expression protein, C-terminal conserved region
     "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
 ]
 
@@ -254,6 +261,13 @@ def parse_arguments() -> argparse.Namespace:
         dest="no_fasta",
         action="store_true",
         help="Option to not return a fasta file for the gene neighbourhood [Default: off]",
+    )
+
+    parser.add_argument(
+        "--no_ssu",
+        dest="no_ssu",
+        action="store_true",
+        help="Option to not return a fasta file for the NiFe SSU [Default: off]",
     )
 
     parser.add_argument(
@@ -470,10 +484,6 @@ def extract_gene_neighbourhood(
 ) -> None:
     """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
     # params
-    gene_name = gene_name
-    gff_file = gff_file  # The input gff file
-    anno_file = anno_file
-    fasta_file = fasta_file
     output_dir = args.output_dir  # Your output file
     upstream_window = args.upstream_window  # Size of window upstream/downstream
     downstream_window = args.downstream_window  # Size of window upstream/downstream
@@ -634,9 +644,6 @@ def extract_gene_neighbourhood(
 
     # Execute downstream functions, contigent on args:
 
-    # call nife ssu extractor
-    extract_nife_ssu(args, gene_name, gff_subset, fasta_file)
-
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
     if args.no_annotation is not True:
         anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
@@ -649,7 +656,7 @@ def extract_gene_neighbourhood(
     # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
     if args.no_fasta is not True:
         # NOTE: adding the gene IDs list without maturation genes
-        fasta_neighbourhood_extract(
+        fasta_file_subset = fasta_neighbourhood_extract(
             args,
             gene_name,
             fasta_file,
@@ -658,6 +665,10 @@ def extract_gene_neighbourhood(
             gene_ids_nomaturation,
             gene_ids_ppi_candidates,
         )
+
+    # call nife ssu extractor
+    if args.no_ssu is not True:
+        extract_nife_ssu(args, gene_name, gff_subset, fasta_file_subset)
 
 
 def extract_nife_ssu(
@@ -694,25 +705,25 @@ def extract_nife_ssu(
     )
 
     # identify candidate matching codes
-    candidates = neighbours.filter(
+    ssu_candidates = neighbours.filter(
         pl.any_horizontal(
             [pl.col("attributes").str.contains(code) for code in NIFE_SSU_CODES]
         )
     )
 
-    if not candidates.is_empty():
+    if not ssu_candidates.is_empty():
         # choose the closest nife ssu neighbour (i.e. smallest distance to target)
-        candidates = candidates.with_columns(
+        ssu_candidates = ssu_candidates.with_columns(
             pl.when(pl.col("start") > end)
             .then(pl.col("start") - end)
             .otherwise(start - pl.col("end"))
             .alias("distance")
         )
-        closest = candidates.sort("distance").head(1)
+        closest_ssu = ssu_candidates.sort("distance").head(1)
 
         # extract gene ID from attributes col
         ssu_id = (
-            closest.select(
+            closest_ssu.select(
                 pl.col("attributes").str.extract_groups(r"ID=([^;]+)").struct.field("1")
             )
             .to_series()
@@ -737,6 +748,8 @@ def extract_nife_ssu(
                 SeqIO.write(ssu_record, f, "fasta")
             with open(outpath2, "w") as f:
                 SeqIO.write(lsu_and_ssu_records, f, "fasta")
+
+        # TODO: add boltz, chai, colabfold fastas of LSU+SSU
     else:
         print(f"No neighbours near {lsu_id} match any NiFe SSU annotation codes")
 
@@ -829,7 +842,7 @@ def fasta_neighbourhood_extract(
     gene_ids_full: list,
     gene_ids_nomaturation: list,
     gene_ids_ppi_candidates: list,
-) -> None:
+) -> Path:
     """Extract fasta seqs surrounding gene of interest and output .faa files in a new dir, each containing a pairwise combination of fastas for AlphaPulldown input"""
     # params
     output_dir = args.output_dir
@@ -893,6 +906,8 @@ def fasta_neighbourhood_extract(
                 SeqIO.write(fasta_subset, f, "fasta")
         # generate fasta pairwise combinations:
         pairwise_fasta_generation(args, gene_name, outpath_set2, "Set2")
+
+    return outpath_all
 
 
 def pairwise_fasta_generation(
