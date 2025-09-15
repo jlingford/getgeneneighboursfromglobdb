@@ -365,6 +365,9 @@ def parse_arguments() -> argparse.Namespace:
             "--pairwise_set1 or --pairwise_set2 options must be set too alongside the --boltz_fastas, --chai_fastas, --colabfold_fastas, and --regular_fastas options"
         )
 
+    if args.no_fasta and args.pairwise_set1 or args.pairwise_set2:
+        parser.error("--no_fasta and --pairwise_set1/2 are mutually exclusive options")
+
     return args
 
 
@@ -638,12 +641,10 @@ def extract_gene_neighbourhood(
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
     if args.no_annotation is not True:
-        annotation_extract(args, gene_name, anno_file, gene_ids)
+        anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
 
     # plot gene neighbourhood figure
-    # gff_input_file = str(gff_outpath)
     gff_input_file = gff_outpath
-    print(gff_input_file)
     if args.no_plot is not True:
         plot_gene_neighbourhood(args, gene_name, gff_input_file, goi_start, goi_end)
 
@@ -654,6 +655,7 @@ def extract_gene_neighbourhood(
             args,
             gene_name,
             fasta_file,
+            anno_file_subset,
             gene_ids,
             gene_ids_nomaturation,
             gene_ids_ppi_candidates,
@@ -827,6 +829,7 @@ def fasta_neighbourhood_extract(
     args: argparse.Namespace,
     gene_name: str,
     fasta_file: Path,
+    annotation_file: Path,
     gene_ids_full: list,
     gene_ids_nomaturation: list,
     gene_ids_ppi_candidates: list,
@@ -835,67 +838,64 @@ def fasta_neighbourhood_extract(
     # params
     output_dir = args.output_dir
     fasta_file = fasta_file
+    annotation_file = annotation_file
     gene_ids = gene_ids_full
     gene_ids_nomaturation = gene_ids_nomaturation
     gene_ids_ppi_candidates = gene_ids_ppi_candidates
     gene_name = gene_name
 
-    # make output file of for all fastas in gene neighbourhood
+    # map annotation descriptions to gene ids
+    df = pl.read_csv(annotation_file, separator="\t", has_header=True, quote_char=None)
+    df = df.select(pl.col("gene_callers_id"), pl.col("function"))
+    df = df.unique(subset=["gene_callers_id"], keep="first")
+    desc_map = df.to_dict(as_series=False)
+
+    # output all fastas from the entire gene neighbourhood
     outpath_all = Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_all.faa"
-    # Do the same for subset of fasta list without maturation factors (set1)
-    outpath_set1 = (
-        Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_set1.faa"
-    )
-    # Do the same for subset of fasta list of just best PPI candidates (set2)
-    outpath_set2 = (
-        Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_set2.faa"
-    )
     outpath_all.parent.mkdir(exist_ok=True, parents=True)
-    outpath_set1.parent.mkdir(exist_ok=True, parents=True)
-    outpath_set2.parent.mkdir(exist_ok=True, parents=True)
+    with open_fasta(fasta_file) as handle:
+        records = list(SeqIO.parse(handle, "fasta"))
+        fasta_subset = [rec for rec in records if rec.id in gene_ids]
+        descriptive_fastas = [
+            SeqRecord(
+                seq=rec.seq,
+                name=rec.id,
+                id=rec.id,
+                description=str(desc_map.get(rec.id, "")),
+            )
+            for rec in fasta_subset
+        ]
+        with open(outpath_all, "w") as f:
+            SeqIO.write(descriptive_fastas, f, "fasta")
 
-    # # output all fastas from the entire gene neighbourhood
-    # with open_fasta(fasta_file) as handle:
-    #     fastafile = SeqIO.parse(handle, "fasta")
-    #     gene_neighbours = [record for record in fastafile if record.id in gene_ids]
-    #     with open(outpath_all, "w") as f:
-    #         SeqIO.write(gene_neighbours, f, "fasta")
-    #
-    # # output all fastas minus the maturation factors (set1)
-    # with open_fasta(outpath_set1) as handle:
-    #     fastafile = SeqIO.parse(handle, "fasta")
-    #     gene_neighbours = [
-    #         record for record in fastafile if record.id in gene_ids_nomaturation
-    #     ]
-    #     with open(outpath_set1, "w") as f:
-    #         SeqIO.write(gene_neighbours, f, "fasta")
-    #
-    # # output just the fastas that are most likley to be NiFe PPI candidates (set2)
-    # with open_fasta(outpath_set2) as handle:
-    #     fastafile = SeqIO.parse(handle, "fasta")
-    #     gene_neighbours = [
-    #         record for record in fastafile if record.id in gene_ids_ppi_candidates
-    #     ]
-    #     with open(outpath_set2, "w") as f:
-    #         SeqIO.write(gene_neighbours, f, "fasta")
-
-    for outpath, gene_set in zip(
-        [outpath_all, outpath_set1, outpath_set2],
-        [gene_ids, gene_ids_nomaturation, gene_ids_ppi_candidates],
-    ):
-        with open_fasta(outpath) as handle:
-            fastafile = SeqIO.parse(handle, "fasta")
-            fasta_set = [record for record in fastafile if record.id in gene_set]
-            with open(outpath, "w") as f:
-                SeqIO.write(fasta_set, f, "fasta")
-
-    # generate fasta pairwise combinations:
-    # WARN: only doing it for subset of all gene neighbours
-    # TODO: update this for better arg parsing
+    # output all fastas minus the maturation factors (set1), use fasta file generated above as input
     if args.pairwise_set1 is True:
+        outpath_set1 = (
+            Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_set1.faa"
+        )
+        outpath_set1.parent.mkdir(exist_ok=True, parents=True)
+        with open_fasta(outpath_all) as handle:
+            fastafile = SeqIO.parse(handle, "fasta")
+            fasta_subset = [rec for rec in fastafile if rec.id in gene_ids_nomaturation]
+            with open(outpath_set1, "w") as f:
+                SeqIO.write(fasta_subset, f, "fasta")
+        # generate fasta pairwise combinations:
         pairwise_fasta_generation(args, gene_name, outpath_set1, "Set1")
 
+    # output just the fastas that are most likley to be NiFe PPI candidates (set2)
     if args.pairwise_set2 is True:
+        outpath_set2 = (
+            Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_set2.faa"
+        )
+        outpath_set2.parent.mkdir(exist_ok=True, parents=True)
+        with open_fasta(outpath_all) as handle:
+            fastafile = SeqIO.parse(handle, "fasta")
+            fasta_subset = [
+                rec for rec in fastafile if rec.id in gene_ids_ppi_candidates
+            ]
+            with open(outpath_set2, "w") as f:
+                SeqIO.write(fasta_subset, f, "fasta")
+        # generate fasta pairwise combinations:
         pairwise_fasta_generation(args, gene_name, outpath_set2, "Set2")
 
 
@@ -1002,7 +1002,7 @@ def annotation_extract(
     gene_name: str,
     annotation_file: Path,
     gene_ids: list,
-) -> None:
+) -> Path:
     """Extract annotation info surrounding gene of interest and output to new .tsv"""
     # params
     output_dir = args.output_dir
@@ -1021,11 +1021,10 @@ def annotation_extract(
 
     # Save annotation tsv subset
     outpath = Path(output_dir) / gene_name / f"{gene_name}___annotations.tsv"
-    if outpath.exists():
-        logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
     anno_subset.collect().write_csv(outpath, separator="\t", include_header=True)
-    # anno_subset.write_csv(outpath, separator="\t", include_header=True)
+
+    return outpath
 
 
 def open_fasta(file_path: Path) -> TextIOWrapper:
