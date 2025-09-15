@@ -132,16 +132,16 @@ NIFE_MATURATION_CODES = [
     "COG0068",  # Hydrogenase maturation factor HypF (carbamoyltransferase) (HypF) (PDB:3TSP)
     "COG0298",  # Hydrogenase maturation factor HybG, HypC/HupF family (HypC) (PDB:2OT2)
     "COG0309",  # Carbamoyl dehydratase HypE (hydrogenase maturation factor) (HypE) (PDB:2I6R) (PUBMED:28618091)
-    "COG0375",  # Hydrogenase maturation factor HypA/HybF, metallochaperone involved in Ni insertion (HybF) (PDB:3A43) (PUBMED:16817932)	2.85e-59
+    "COG0375",  # Hydrogenase maturation factor HypA/HybF, metallochaperone involved in Ni insertion (HybF) (PDB:3A43) (PUBMED:16817932)
     "COG0378",  # Hydrogenase/urease maturation factor HypB, Ni2+-binding GTPase (HypB) (PDB:2HF8) (PUBMED:24338018;23899293)
     "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
     "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
     "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
-    "K04651",  # hydrogenase nickel incorporation protein HypA/HybF	4e-40
+    "K04651",  # hydrogenase nickel incorporation protein HypA/HybF
     "K04652",  # hydrogenase nickel incorporation protein HypB
     "K04656",  # hydrogenase maturation protein HypF
     "K07321",  # CO dehydrogenase maturation factor
-    "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA	1.2e-36
+    "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA
     "PF01924.20",  # Hydrogenase formation hypA family
     "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
 ]
@@ -363,7 +363,7 @@ def parse_arguments() -> argparse.Namespace:
             "--pairwise_set1 or --pairwise_set2 options must be set too alongside the --boltz_fastas, --chai_fastas, --colabfold_fastas, and --regular_fastas options"
         )
 
-    if args.no_fasta and args.pairwise_set1 or args.pairwise_set2:
+    if (args.no_fasta) and (args.pairwise_set1 or args.pairwise_set2):
         parser.error("--no_fasta and --pairwise_set1/2 are mutually exclusive options")
 
     return args
@@ -776,6 +776,8 @@ def plot_gene_neighbourhood(
                         return "#b4befe"
                     if gene_anno in NIFE_SSU_CODES:
                         return "#89b4fa"
+                    if gene_anno in NIFE_MATURATION_CODES:
+                        return "#f9e2af"
                     # colour expected target with correct annotation as green
                     if gene_anno in NIFE_LSU_CODES:
                         return "#a6e3a1"
@@ -842,7 +844,7 @@ def fasta_neighbourhood_extract(
     df = pl.read_csv(annotation_file, separator="\t", has_header=True, quote_char=None)
     df = df.select(pl.col("gene_callers_id"), pl.col("function"))
     df = df.unique(subset=["gene_callers_id"], keep="first")
-    desc_map = df.to_dict(as_series=False)
+    desc_map = df.transpose(column_names="gene_callers_id").to_dict(as_series=False)
 
     # output all fastas from the entire gene neighbourhood
     outpath_all = Path(output_dir) / gene_name / f"{gene_name}-gene_neighbours_all.faa"
@@ -855,7 +857,7 @@ def fasta_neighbourhood_extract(
                 seq=rec.seq,
                 name=rec.id,
                 id=rec.id,
-                description=str(desc_map.get(rec.id, "")),
+                description=str(desc_map.get(rec.id, [None])[0]),
             )
             for rec in fasta_subset
         ]
