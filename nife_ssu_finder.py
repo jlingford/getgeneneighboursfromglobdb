@@ -358,9 +358,7 @@ def parse_arguments() -> argparse.Namespace:
         or args.chai_fastas
         or args.colabfold_fastas
         or args.regular_fastas
-        and not args.pairwise_set1
-        or args.pairwise_set2
-    ):
+    ) and not (args.pairwise_set1 or args.pairwise_set2):
         parser.error(
             "--pairwise_set1 or --pairwise_set2 options must be set too alongside the --boltz_fastas, --chai_fastas, --colabfold_fastas, and --regular_fastas options"
         )
@@ -721,9 +719,7 @@ def extract_nife_ssu(
             .to_list()[0]
         )
         # make output path
-        outpath1 = (
-            Path(output_dir) / gene_name / f"{ssu_id}-NiFe_SSU_partner_of-{lsu_id}.faa"
-        )
+        outpath1 = Path(output_dir) / gene_name / f"{ssu_id}-NiFe_SSU.faa"
         outpath1.parent.mkdir(exist_ok=True, parents=True)
         # make other output path
         outpath2 = Path(output_dir) / gene_name / f"{lsu_id}-{ssu_id}-NiFe_LSU_SSU.faa"
@@ -817,8 +813,6 @@ def plot_gene_neighbourhood(
 
     # save figure
     outpath = Path(output_dir) / gene_name / f"{gene_name}___plot.{format}"
-    if outpath.exists():
-        logging.warning(f"Writing over existing figure: {outpath.name}")
     outpath.parent.mkdir(exist_ok=True, parents=True)
     ax.figure.savefig(outpath, dpi=dpi, format=format)
     # close figure to avoid memory issues
