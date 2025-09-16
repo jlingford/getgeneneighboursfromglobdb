@@ -613,10 +613,7 @@ def extract_gene_neighbourhood(
             / f"{gene_name}___gene_neighbours_COG20_annotations.gff"
         )
 
-    if gff_outpath.exists():
-        logging.warning(f"Writing over existing output .gff file: {gff_outpath.name}")
     gff_outpath.parent.mkdir(exist_ok=True, parents=True)
-
     gff_subset.write_csv(
         gff_outpath,
         separator="\t",
