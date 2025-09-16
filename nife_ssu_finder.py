@@ -53,17 +53,22 @@ NIFE_LSU_CODES = [
     "K00333",  # NADH-quinone oxidoreductase subunit D [EC:7.1.1.2]
     "K00338",  # NADH-quinone oxidoreductase subunit I [EC:7.1.1.2]
     "K00436",  # NAD-reducing hydrogenase large subunit [EC:1.12.1.2]
+    "K00437",  # [NiFe] hydrogenase large subunit [EC:1.12.2.1]
     "K00440",  # coenzyme F420 hydrogenase subunit alpha [EC:1.12.98.1]
-    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K05922",  # quinone-reactive Ni/Fe-hydrogenase large subunit [EC:1.12.5.1]
     "K06281",  # hydrogenase large subunit [EC:1.12.99.6]
     "K13378",  # NADH-quinone oxidoreductase subunit C/D [EC:7.1.1.2]
-    "K14086",  # ech hydrogenase subunit A
+    "K14068",  # methanophenazine hydrogenase, large subunit [EC:1.12.98.3]
+    "K14070",  # methanophenazine hydrogenase [EC:1.12.98.3]
+    "K14090",  # ech hydrogenase subunit E
     "K14126",  # F420-non-reducing hydrogenase large subunit [EC:1.12.99.- 1.8.98.5]
+    "K17993",  # sulfhydrogenase subunit alpha [EC:1.12.1.3 1.12.1.5]
+    "K18016",  # membrane-bound hydrogenase subunit alpha [EC:1.12.7.2]
+    "K23549",  # uptake hydrogenase large subunit [EC:1.12.99.6]
     "K23549",  # uptake hydrogenase large subunit [EC:1.12.99.6]
     "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
     "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
     "PF00374.23",  # Nickel-dependent hydrogenase
-    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe SSU
@@ -73,14 +78,18 @@ NIFE_SSU_CODES = [
     "COG1941",  # Coenzyme F420-reducing hydrogenase, gamma subunit (FrhG) (PDB:5ODC)
     "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
     "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
+    "K00443",  # coenzyme F420 hydrogenase subunit gamma [EC:1.12.98.1]
     "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
     "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
     "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
-    "K14113",  # energy-converting hydrogenase B subunit D
+    "K14088",  # ech hydrogenase subunit C
     "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
     "K14128",  # F420-non-reducing hydrogenase small subunit [EC:1.12.99.- 1.8.98.5]
+    "K17996",  # sulfhydrogenase subunit beta (sulfur reductase) [EC:1.12.98.4]
     "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
     "K18007",  # NAD-reducing hydrogenase small subunit [EC:1.12.1.2]
+    "K18023",  # membrane-bound hydrogenase subunit mbhJ [EC:1.12.7.2]
+    "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
     "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
     "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
@@ -91,17 +100,19 @@ NIFE_FRHB_CODES = [
     "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
     "COG1908",  # Coenzyme F420-reducing hydrogenase, delta subunit (MvhD) (PDB:5ODC)
     "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
-    "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+    "K17994",  # sulfhydrogenase subunit delta [EC:1.12.1.3 1.12.1.5]
     "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
+# TODO: add other cytochrome codes?
 NIFE_GROUP1_PPI_CODES = [
     "COG1969",  # Ni,Fe-hydrogenase I cytochrome b subunit (HyaC) (PDB:4GD3)
     "COG3658",  # Cytochrome b subunit of Ni2+-dependent hydrogenase (CytB)
     "COG5557",  # Ni/Fe-hydrogenase 2 integral membrane subunit HybB (HybB)
     "K03620",  # Ni/Fe-hydrogenase 1 B-type cytochrome subunit
     "K04013",  # cytochrome c-type protein NrfB
+    "K14069",  # methanophenazine hydrogenase, cytochrome b subunit [EC:1.12.98.3]
     "PF01292.24",  # Prokaryotic cytochrome b561
     "PF14522.10",  # Cytochrome c7 and related cytochrome c
     "PF14537.10",  # Cytochrome c3
@@ -112,10 +123,101 @@ NIFE_GROUP1_PPI_CODES = [
 NIFE_GROUP2_PPI_CODES = []
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
-NIFE_GROUP3_PPI_CODES = []
+# TODO: add heterodisulfide reductase and other codes
+NIFE_GROUP3_PPI_CODES = [
+    "COG1142",  # Fe-S-cluster-containing hydrogenase component 2 (HycB)
+    "K00442",  # coenzyme F420 hydrogenase subunit delta
+    "K05586",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K05587",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
+    "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+    "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+    "K17995",  # sulfhydrogenase subunit gamma (sulfur reductase) [EC:1.12.98.4]
+    "K18005",  # [NiFe] hydrogenase diaphorase moiety large subunit [EC:1.12.1.2]
+    "K18006",  # [NiFe] hydrogenase diaphorase moiety small subunit [EC:1.12.1.2]
+    "K18007",  # NAD-reducing hydrogenase small subunit [EC:1.12.1.2]
+    "K18008",  # [NiFe] hydrogenase small subunit [EC:1.12.2.1]
+    "K18330",  # NADP-reducing hydrogenase subunit HndA [EC:1.12.1.3]
+    "K18331",  # NADP-reducing hydrogenase subunit HndC [EC:1.12.1.3]
+    "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
+    "PF04422.17",  # Coenzyme F420 hydrogenase/dehydrogenase, beta subunit N-term
+    "PF04432.17",  # Coenzyme F420 hydrogenase/dehydrogenase, beta subunit C terminus
+]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
-NIFE_GROUP4_PPI_CODES = []
+# TODO: add NADH ubiquinone oxidoreductase subunits
+NIFE_GROUP4_PPI_CODES = [
+    "COG3262",  # Ni,Fe-hydrogenase III component G (HycE1)
+    "COG4035",  # Energy-converting hydrogenase Eha subunit L (EhaL) (PUBMED:19495416)
+    "COG4036",  # Energy-converting hydrogenase Eha subunit G (EhaG) (PUBMED:19495416)
+    "COG4037",  # Energy-converting hydrogenase Eha subunit F (EhaF) (PUBMED:19495416)
+    "COG4038",  # Energy-converting hydrogenase Eha subunit E (EhaE) (PUBMED:19495416)
+    "COG4039",  # Energy-converting hydrogenase Eha subunit D (EhaD) (PUBMED:19495416)
+    "COG4040",  # Energy-converting hydrogenase Eha subunit C (EhaC) (PUBMED:19495416)
+    "COG4041",  # Energy-converting hydrogenase Eha subunit B (EhaB) (PUBMED:19495416)
+    "COG4042",  # Energy-converting hydrogenase Eha subunit A (EhaA) (PUBMED:19495416)
+    "COG4078",  # Energy-converting hydrogenase Eha subunit H (EhaH) (PUBMED:19495416)
+    "COG4084",  # Energy-converting hydrogenase A subunit M (EhaM) (PDB:1NXH)
+    "COG4237",  # Hydrogenase-4 membrane subunit HyfE (HyfE)
+    "K06862",  # energy-converting hydrogenase B subunit Q
+    "K06862",  # energy-converting hydrogenase B subunit Q
+    "K12136",  # hydrogenase-4 component A [EC:1.-.-.-]
+    "K12137",  # hydrogenase-4 component B [EC:1.-.-.-]
+    "K12138",  # hydrogenase-4 component C [EC:1.-.-.-]
+    "K12139",  # hydrogenase-4 component D [EC:1.-.-.-]
+    "K12140",  # hydrogenase-4 component E [EC:1.-.-.-]
+    "K12141",  # hydrogenase-4 component F [EC:1.-.-.-]
+    "K12142",  # hydrogenase-4 component G [EC:1.-.-.-]
+    "K12143",  # hydrogenase-4 component H
+    "K12144",  # hydrogenase-4 component I [EC:1.-.-.-]
+    "K12145",  # hydrogenase-4 component J [EC:1.-.-.-]
+    "K14086",  # ech hydrogenase subunit A
+    "K14087",  # ech hydrogenase subunit B
+    "K14089",  # ech hydrogenase subunit D
+    "K14091",  # ech hydrogenase subunit F
+    "K14092",  # energy-converting hydrogenase A subunit A
+    "K14093",  # energy-converting hydrogenase A subunit B
+    "K14094",  # energy-converting hydrogenase A subunit C
+    "K14095",  # energy-converting hydrogenase A subunit D
+    "K14096",  # energy-converting hydrogenase A subunit E
+    "K14097",  # energy-converting hydrogenase A subunit F
+    "K14098",  # energy-converting hydrogenase A subunit G
+    "K14099",  # energy-converting hydrogenase A subunit H
+    "K14100",  # energy-converting hydrogenase A subunit I
+    "K14101",  # energy-converting hydrogenase A subunit J
+    "K14102",  # energy-converting hydrogenase A subunit K
+    "K14103",  # energy-converting hydrogenase A subunit L
+    "K14104",  # energy-converting hydrogenase A subunit M
+    "K14105",  # energy-converting hydrogenase A subunit N
+    "K14106",  # energy-converting hydrogenase A subunit O
+    "K14107",  # energy-converting hydrogenase A subunit P
+    "K14108",  # energy-converting hydrogenase A subunit Q
+    "K14109",  # energy-converting hydrogenase A subunit R
+    "K14110",  # energy-converting hydrogenase B subunit A
+    "K14111",  # energy-converting hydrogenase B subunit B
+    "K14112",  # energy-converting hydrogenase B subunit C
+    "K14113",  # energy-converting hydrogenase B subunit D
+    "K14114",  # energy-converting hydrogenase B subunit E
+    "K14115",  # energy-converting hydrogenase B subunit F
+    "K14116",  # energy-converting hydrogenase B subunit G
+    "K14117",  # energy-converting hydrogenase B subunit H
+    "K14118",  # energy-converting hydrogenase B subunit I
+    "K14119",  # energy-converting hydrogenase B subunit J
+    "K14120",  # energy-converting hydrogenase B subunit K
+    "K14121",  # energy-converting hydrogenase B subunit L
+    "K14122",  # energy-converting hydrogenase B subunit M
+    "K14123",  # energy-converting hydrogenase B subunit N
+    "K14124",  # energy-converting hydrogenase B subunit O
+    "K14125",  # energy-converting hydrogenase B subunit P
+    "K18017",  # membrane-bound hydrogenase subunit beta [EC:1.12.7.2]
+    "K22015",  # formate dehydrogenase (hydrogenase) [EC:1.17.98.4 1.17.98.-]
+    "PF00146.25",  # NADH dehydrogenase
+    "PF09877.13",  # Energy-converting hydrogenase subunit EhaL
+    "PF10622.13",  # Energy-converting hydrogenase B subunit P (EhbP)
+    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
+    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
+]
 
 # WARN: hardcoded HMM annotation codes for all possible NiFe PPI partners
 NIFE_PPI_CANDIDATES = (
@@ -137,8 +239,11 @@ NIFE_MATURATION_CODES = [
     "COG0378",  # Hydrogenase/urease maturation factor HypB, Ni2+-binding GTPase (HypB) (PDB:2HF8) (PUBMED:24338018;23899293)
     "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
     "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
+    "COG1973",  # Hydrogenase maturation factor HypE (HypE2)
+    "COG2370",  # Hydrogenase/urease accessory protein HupE (HupE)
     "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
     "K03618",  # hydrogenase-1 operon protein HyaF
+    "K03619",  # hydrogenase-1 operon protein HyaE
     "K04651",  # hydrogenase nickel incorporation protein HypA/HybF
     "K04652",  # hydrogenase nickel incorporation protein HypB
     "K04653",  # hydrogenase expression/formation protein HypC
@@ -146,12 +251,36 @@ NIFE_MATURATION_CODES = [
     "K04655",  # hydrogenase expression/formation protein HypE
     "K04656",  # hydrogenase maturation protein HypF
     "K07321",  # CO dehydrogenase maturation factor
+    "K07388",  # hydrogenase expression/formation protein
+    "K08315",  # hydrogenase 3 maturation protease [EC:3.4.23.51]
+    "K12146",  # hydrogenase-4 transcriptional activator
+    "K19640",  # putative two-component system protein, hydrogenase maturation factor HypX/HoxX
     "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA
     "PF01455.22",  # HupF/HypC family
+    "PF01750.22",  # Hydrogenase maturation protease
     "PF01924.20",  # Hydrogenase formation hypA family
     "PF02492.23",  # CobW/HypB/UreG, nucleotide-binding domain
     "PF04809.17",  # HupH hydrogenase expression protein, C-terminal conserved region
+    "PF04809.17",  # HupH hydrogenase expression protein, C-terminal conserved region
+    "PF07449.15",  # Hydrogenase-1 expression protein HyaE
     "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
+    "PF21699.1",  # Iron-only hydrogenase system regulator, putative
+]
+
+IRON_HYDROGENASE_CODES = [
+    "COG4074",  # 5,10-methenyltetrahydromethanopterin hydrogenase (Mth) (PDB:2B0J)
+    "COG4624",  # Iron only hydrogenase large subunit, C-terminal domain (Nar1) (PDB:1C4A)
+    "K00532",  # ferredoxin hydrogenase [EC:1.12.7.2]
+    "K00533",  # ferredoxin hydrogenase large subunit [EC:1.12.7.2]
+    "K00534",  # ferredoxin hydrogenase small subunit [EC:1.12.7.2]
+    "K13942",  # 5,10-methenyltetrahydromethanopterin hydrogenase [EC:1.12.98.2]
+    "K17997",  # iron-hydrogenase subunit alpha [EC:1.12.1.4]
+    "K17998",  # iron-hydrogenase subunit beta [EC:1.12.1.4]
+    "K17999",  # iron-hydrogenase subunit gamma [EC:1.12.1.4]
+    "K18332",  # NADP-reducing hydrogenase subunit HndD [EC:1.12.1.3]
+    "K25123",  # iron hydrogenase HydA2 [EC:1.12.7.-]
+    "PF02256.21",  # Iron hydrogenase small subunit
+    "PF02906.18",  # Iron only hydrogenase large subunit, C-terminal domain
 ]
 
 
@@ -233,7 +362,7 @@ def parse_arguments() -> argparse.Namespace:
         "--upstream",
         dest="upstream_window",
         type=int,
-        default=5000,
+        default=10000,
         required=False,
         metavar="INT",
         help="Size of window (in base pairs) upstream of GOI [Default: 5000]",
@@ -244,7 +373,7 @@ def parse_arguments() -> argparse.Namespace:
         "--downstream",
         dest="downstream_window",
         type=int,
-        default=5000,
+        default=10000,
         required=False,
         metavar="INT",
         help="Size of window (in base pairs) downstream of GOI [Default: 5000]",
@@ -619,6 +748,7 @@ def extract_gene_neighbourhood(
         separator="\t",
         include_header=False,
     )
+    # TODO: make a logging file
     print(
         f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {gff_outpath.name}"
     )
@@ -647,12 +777,15 @@ def extract_gene_neighbourhood(
 
     # call nife ssu extractor, uses fasta file generated from previous step as input
     if args.no_ssu is not True:
-        extract_nife_ssu(args, gene_name, gff_subset, fasta_file_subset)
+        extract_nife_ssu(
+            args, gene_name, anno_file_subset, gff_subset, fasta_file_subset
+        )
 
 
 def extract_nife_ssu(
     args: argparse.Namespace,
     target_name: str,
+    anno_file: Path,
     gff_input: pl.DataFrame,
     fasta_file: Path,
 ) -> None:
@@ -668,7 +801,7 @@ def extract_nife_ssu(
     goi = gff.filter(pl.col("attributes").str.contains(f"ID={lsu_id}"))
 
     scaffold = goi.item(0, "seqid")
-    strand = goi.item(0, "strand")
+    # strand = goi.item(0, "strand")
     start = goi.item(0, "start")
     end = goi.item(0, "end")
 
@@ -680,7 +813,7 @@ def extract_nife_ssu(
         (pl.col("seqid") == scaffold)
         & (pl.col("start") <= window_end)
         & (pl.col("end") >= window_start)
-        & (pl.col("strand") == strand)
+        # & (pl.col("strand") == strand)
     )
 
     # identify candidate matching codes
@@ -689,6 +822,9 @@ def extract_nife_ssu(
             [pl.col("attributes").str.contains(code) for code in NIFE_SSU_CODES]
         )
     )
+
+    # make summary table of LSU + SSU info
+    summary_table = Path(output_dir) / "NiFe_LSU_SSU_pairs.tsv"
 
     if not ssu_candidates.is_empty():
         # choose the closest nife ssu neighbour (i.e. smallest distance to target)
@@ -708,6 +844,10 @@ def extract_nife_ssu(
             .to_series()
             .to_list()[0]
         )
+
+        # write to summary_table
+        with open(summary_table, "a") as f:
+            f.write(f"{lsu_id}\t{ssu_id}\n")
 
         # set output file names
         genome_name = lsu_id.split("___")[0]
@@ -752,7 +892,12 @@ def extract_nife_ssu(
                     SeqIO.write(lsu_and_ssu_records, f, "fasta")
 
     else:
+        # TODO: make a logging file
         print(f"No neighbours near {lsu_id} match any NiFe SSU annotation codes")
+
+        # write to summary_table
+        with open(summary_table, "a") as f:
+            f.write(f"{lsu_id}\t-\n")
 
 
 def plot_gene_neighbourhood(
@@ -1137,6 +1282,7 @@ def process_target_genes(args: argparse.Namespace) -> None:
                 extract_gene_neighbourhood(
                     args, gene_name, gff_file, anno_file, fasta_file
                 )
+
     # Or process single target
     if args.gene_name:
         gene_name = args.gene_name.rstrip()
