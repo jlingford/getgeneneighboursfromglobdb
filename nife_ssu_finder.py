@@ -734,10 +734,12 @@ def extract_nife_ssu(
             outpath = Path(output_dir) / gene_name / "NiFe_LSU_SSU_pair"
             outpath.mkdir(exist_ok=True, parents=True)
             target_path = Path(output_dir) / gene_name
-            # TODO: add boltz, chai, colabfold fastas of LSU+SSU
             for file in target_path.rglob("*"):
-                if file.is_file() and file.stem in lsu_ssu_file_names:
-                    shutil.copy(file, outpath)
+                if outpath in file.parents:
+                    continue
+                file_name = file.stem.split("_AFformat_")[0]
+                if file.is_file() and file_name in lsu_ssu_file_names:
+                    shutil.copy2(file, outpath)
         else:
             # write NiFe_LSU_SSU fasta file from scratch
             outpath2 = (
