@@ -556,7 +556,7 @@ def extract_gene_neighbourhood(
             (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
-            & (~pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
+            & (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
         )
 
     # return list of gene IDs for fasta file output, called at end of this function
