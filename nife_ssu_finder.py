@@ -18,6 +18,7 @@ Control flow:
 # add logging output to argparse function
 
 # imports
+import shutil
 from ast import List
 from io import TextIOWrapper
 from os import path
@@ -250,20 +251,6 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--no_annotation",
-        dest="no_annotation",
-        action="store_true",
-        help="Option to not return a table of annotations for the gene neighbourhood [Default: off]",
-    )
-
-    parser.add_argument(
-        "--no_fasta",
-        dest="no_fasta",
-        action="store_true",
-        help="Option to not return a fasta file for the gene neighbourhood [Default: off]",
-    )
-
-    parser.add_argument(
         "--no_ssu",
         dest="no_ssu",
         action="store_true",
@@ -298,11 +285,11 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-B",
-        "--both_strands",
-        dest="both_strands",
+        "-S",
+        "--one_strand",
+        dest="one_strand",
         action="store_true",
-        help="Option to include both strands of genetic neighbourhood in output, rather than only genetic neighbours on the same strand as the gene-of-interest. [Default: off]",
+        help="Option to only extract genetic neighbourhood from the same strand the gene-of-interest is located on. Default is to extract neighbourhood of both strands [Default: off]",
     )
 
     parser.add_argument(
@@ -376,9 +363,6 @@ def parse_arguments() -> argparse.Namespace:
         parser.error(
             "--pairwise_set1 or --pairwise_set2 options must be set too alongside the --boltz_fastas, --chai_fastas, --colabfold_fastas, and --regular_fastas options"
         )
-
-    if (args.no_fasta) and (args.pairwise_set1 or args.pairwise_set2):
-        parser.error("--no_fasta and --pairwise_set1/2 are mutually exclusive options")
 
     return args
 
@@ -528,24 +512,27 @@ def extract_gene_neighbourhood(
     window_start: int = max(goi_start - upstream_window, 0)
     window_end: int = goi_end + downstream_window
 
-    # Get subset of gff file based on window. Get only genes from same strand as GOI, unless -B|--both_strands flag is provided
-    if args.both_strands is True:
+    # Get subset of gff file based on window. Get genes from both strands, unless -S|--one_strand flag is provided
+    if args.one_strand is True:
         # gff of all genes in the target neighbourhood
         gff_subset = gff.filter(
-            (pl.col("seqid") == goi_scaffold)
+            (pl.col("strand") == goi_strand)
+            & (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
         )
         # gff subset WITHOUT maturation genes, for smaller fasta file extraction
         gff_subset_nomaturation = gff.filter(
-            (pl.col("seqid") == goi_scaffold)
+            (pl.col("strand") == goi_strand)
+            & (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
             & (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
         )
         # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
         gff_subset_ppi_candidates = gff.filter(
-            (pl.col("seqid") == goi_scaffold)
+            (pl.col("strand") == goi_strand)
+            & (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
             & (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
@@ -553,23 +540,20 @@ def extract_gene_neighbourhood(
     else:
         # gff of all genes in the target neighbourhood
         gff_subset = gff.filter(
-            (pl.col("strand") == goi_strand)
-            & (pl.col("seqid") == goi_scaffold)
+            (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
         )
         # gff subset WITHOUT maturation genes, for smaller fasta file extraction
         gff_subset_nomaturation = gff.filter(
-            (pl.col("strand") == goi_strand)
-            & (pl.col("seqid") == goi_scaffold)
+            (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
             & (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
         )
         # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
         gff_subset_ppi_candidates = gff.filter(
-            (pl.col("strand") == goi_strand)
-            & (pl.col("seqid") == goi_scaffold)
+            (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
             & (~pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
@@ -645,8 +629,7 @@ def extract_gene_neighbourhood(
     # Execute downstream functions, contigent on args:
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
-    if args.no_annotation is not True:
-        anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
+    anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
 
     # plot gene neighbourhood figure
     gff_input_file = gff_outpath
@@ -654,19 +637,18 @@ def extract_gene_neighbourhood(
         plot_gene_neighbourhood(args, gene_name, gff_input_file, goi_start, goi_end)
 
     # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
-    if args.no_fasta is not True:
-        # NOTE: adding the gene IDs list without maturation genes
-        fasta_file_subset = fasta_neighbourhood_extract(
-            args,
-            gene_name,
-            fasta_file,
-            anno_file_subset,
-            gene_ids,
-            gene_ids_nomaturation,
-            gene_ids_ppi_candidates,
-        )
+    # NOTE: adding the gene IDs list without maturation genes
+    fasta_file_subset = fasta_neighbourhood_extract(
+        args,
+        gene_name,
+        fasta_file,
+        anno_file_subset,
+        gene_ids,
+        gene_ids_nomaturation,
+        gene_ids_ppi_candidates,
+    )
 
-    # call nife ssu extractor
+    # call nife ssu extractor, uses fasta file generated from previous step as input
     if args.no_ssu is not True:
         extract_nife_ssu(args, gene_name, gff_subset, fasta_file_subset)
 
@@ -729,27 +711,47 @@ def extract_nife_ssu(
             .to_series()
             .to_list()[0]
         )
-        # make output path
-        outpath1 = Path(output_dir) / gene_name / f"{ssu_id}-NiFe_SSU.faa"
-        outpath1.parent.mkdir(exist_ok=True, parents=True)
-        # make other output path
-        outpath2 = Path(output_dir) / gene_name / f"{lsu_id}-{ssu_id}-NiFe_LSU_SSU.faa"
-        outpath2.parent.mkdir(exist_ok=True, parents=True)
 
-        # find subset of fasta file based on gene neighbourhood ids
+        # set output file names
+        genome_name = lsu_id.split("___")[0]
+        lsu_id_num = lsu_id.split("___")[1]
+        ssu_id_num = ssu_id.split("___")[1]
+        lsu_ssu_faaname = f"{genome_name}___{lsu_id_num}-{ssu_id_num}"
+        lsu_ssu_faaname2 = f"{genome_name}___{ssu_id_num}-{lsu_id_num}"
+        lsu_ssu_file_names = [lsu_ssu_faaname, lsu_ssu_faaname2]
+
+        # save NiFe SSU fasta file
+        outpath = Path(output_dir) / gene_name / f"{ssu_id}-NiFe_SSU.faa"
+        outpath.parent.mkdir(exist_ok=True, parents=True)
         with open_fasta(fasta_file) as handle:
             records = list(SeqIO.parse(handle, "fasta"))
             ssu_record = next((rec for rec in records if rec.id == ssu_id), None)
-            lsu_record = next((rec for rec in records if rec.id == lsu_id), None)
-            lsu_and_ssu_records = [lsu_record, ssu_record]
-            # all_fastas = SeqIO.parse(handle, "fasta")
-            # gene_neighbours = [record for record in all_fastas if record.id in gene_ids]
-            with open(outpath1, "w") as f:
+            with open(outpath, "w") as f:
                 SeqIO.write(ssu_record, f, "fasta")
-            with open(outpath2, "w") as f:
-                SeqIO.write(lsu_and_ssu_records, f, "fasta")
 
-        # TODO: add boltz, chai, colabfold fastas of LSU+SSU
+        # if pairwise_set1 or pairwise_set2 options are set, then LSU-SSU fastas already exist and just needs to be copied to a new dir
+        if args.pairwise_set1 or args.pairwise_set2 is True:
+            outpath = Path(output_dir) / gene_name / "NiFe_LSU_SSU_pair"
+            outpath.mkdir(exist_ok=True, parents=True)
+            target_path = Path(output_dir) / gene_name
+            # TODO: add boltz, chai, colabfold fastas of LSU+SSU
+            for file in target_path.rglob("*"):
+                if file.is_file() and file.stem in lsu_ssu_file_names:
+                    shutil.copy(file, outpath)
+        else:
+            # write NiFe_LSU_SSU fasta file from scratch
+            outpath2 = (
+                Path(output_dir) / gene_name / f"{lsu_ssu_faaname}-NiFe_LSU_SSU.faa"
+            )
+            outpath2.parent.mkdir(exist_ok=True, parents=True)
+            with open_fasta(fasta_file) as handle:
+                records = list(SeqIO.parse(handle, "fasta"))
+                ssu_record = next((rec for rec in records if rec.id == ssu_id), None)
+                lsu_record = next((rec for rec in records if rec.id == lsu_id), None)
+                lsu_and_ssu_records = [lsu_record, ssu_record]
+                with open(outpath2, "w") as f:
+                    SeqIO.write(lsu_and_ssu_records, f, "fasta")
+
     else:
         print(f"No neighbours near {lsu_id} match any NiFe SSU annotation codes")
 
@@ -941,20 +943,21 @@ def pairwise_fasta_generation(
 
         # write pairwise fastas in chai format
         if args.chai_fastas is True:
-            chai_records = [
-                SeqRecord(
-                    seq=record.seq,
-                    name=record.id,
-                    id=f"protein|{record.id}",
-                    description="",
+            chai_records = []
+            for chain_id, rec in zip(ascii_uppercase, (rec1, rec2)):
+                chai_records.append(
+                    SeqRecord(
+                        seq=rec.seq,
+                        name=rec.id,
+                        id=f"protein|{rec.id}",
+                        description="",
+                    )
                 )
-                for record in records
-            ]
             outpath = (
                 Path(output_dir)
                 / target_id
                 / f"Chai1_fasta_pairs-{set_num}-{target_id}"
-                / faaname
+                / f"{stemname}_Chai1.faa"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             SeqIO.write(chai_records, outpath, "fasta")
@@ -975,7 +978,7 @@ def pairwise_fasta_generation(
                 Path(output_dir)
                 / target_id
                 / f"Boltz2_fasta_pairs-{set_num}-{target_id}"
-                / faaname
+                / f"{stemname}_Boltz2.faa"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             SeqIO.write(boltz_records, outpath, "fasta")
@@ -986,7 +989,7 @@ def pairwise_fasta_generation(
                 Path(output_dir)
                 / target_id
                 / f"ColabFold_fasta_pairs-{set_num}-{target_id}"
-                / faaname
+                / f"{stemname}_ColabFold.faa"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             with open(outpath, "w") as f:
