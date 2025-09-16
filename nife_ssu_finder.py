@@ -1072,7 +1072,6 @@ def find_gff_file_from_index(
     ]
     if not matches:
         raise FileNotFoundError(f"No file found for {target_name}.")
-    print(f"gff file found: {matches[0]}")
     return matches[0]
 
 
@@ -1089,7 +1088,6 @@ def find_annotation_file_from_index(
     ]
     if not matches:
         raise FileNotFoundError(f"No file found for {target_name}.")
-    print(f"annotation file found: {matches[0]}")
     return matches[0]
 
 
@@ -1105,7 +1103,6 @@ def find_fasta_file_from_index(
     ]
     if not matches:
         raise FileNotFoundError(f"No file found for {target_name}.")
-    print(f"fasta file found: {matches[0]}")
     return matches[0]
 
 
@@ -1131,7 +1128,7 @@ def process_target_genes(args: argparse.Namespace) -> None:
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
-                print(f"Searching for {gene_name}")
+                print(f"Searching {gene_name}")
                 target_name = gene_name.split("___")[0]
                 gff_file = find_gff_file_from_index(file_index, target_name)
                 anno_file = find_annotation_file_from_index(file_index, target_name)
@@ -1142,7 +1139,7 @@ def process_target_genes(args: argparse.Namespace) -> None:
     # Or process single target
     if args.gene_name:
         gene_name = args.gene_name.rstrip()
-        print(f"Searching for {gene_name}")
+        print(f"Searching {gene_name}")
         target_name = gene_name.split("___")[0]
         gff_file = find_gff_file_from_index(file_index, target_name)
         anno_file = find_annotation_file_from_index(file_index, target_name)
