@@ -738,7 +738,7 @@ def extract_nife_ssu(
                 if file.is_file() and file_name in lsu_ssu_file_names:
                     shutil.copy2(file, outpath)
         else:
-            # write NiFe_LSU_SSU fasta file from scratch
+            # write NiFe_LSU_SSU fasta file from scratch if pairwise_set options are not set
             outpath2 = (
                 Path(output_dir) / gene_name / f"{lsu_ssu_faaname}-NiFe_LSU_SSU.faa"
             )
@@ -1127,7 +1127,11 @@ def process_target_genes(args: argparse.Namespace) -> None:
                 gene_name = line.rstrip()
                 print(f"Searching {gene_name}")
                 target_name = gene_name.split("___")[0]
-                gff_file = find_gff_file_from_index(file_index, target_name)
+                try:
+                    gff_file = find_gff_file_from_index(file_index, target_name)
+                except FileNotFoundError as e:
+                    print(f"WARNING: {e}. Skipping.")
+                    continue
                 anno_file = find_annotation_file_from_index(file_index, target_name)
                 fasta_file = find_fasta_file_from_index(file_index, target_name)
                 extract_gene_neighbourhood(
@@ -1138,7 +1142,11 @@ def process_target_genes(args: argparse.Namespace) -> None:
         gene_name = args.gene_name.rstrip()
         print(f"Searching {gene_name}")
         target_name = gene_name.split("___")[0]
-        gff_file = find_gff_file_from_index(file_index, target_name)
+        try:
+            gff_file = find_gff_file_from_index(file_index, target_name)
+        except FileNotFoundError as e:
+            print(f"WARNING: {e} Skipping.")
+            return
         anno_file = find_annotation_file_from_index(file_index, target_name)
         fasta_file = find_fasta_file_from_index(file_index, target_name)
         extract_gene_neighbourhood(args, gene_name, gff_file, anno_file, fasta_file)
