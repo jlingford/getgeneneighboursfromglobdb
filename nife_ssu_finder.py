@@ -945,21 +945,20 @@ def pairwise_fasta_generation(
 
         # write pairwise fastas in chai format
         if args.chai_fastas is True:
-            chai_records = []
-            for chain_id, rec in zip(ascii_uppercase, (rec1, rec2)):
-                chai_records.append(
-                    SeqRecord(
-                        seq=rec.seq,
-                        name=rec.id,
-                        id=f"protein|{rec.id}",
-                        description="",
-                    )
+            chai_records = [
+                SeqRecord(
+                    seq=rec.seq,
+                    name=rec.id,
+                    id=f"protein|{rec.id}",
+                    description="",
                 )
+                for rec in (rec1, rec2)
+            ]
             outpath = (
                 Path(output_dir)
                 / target_id
                 / f"Chai1_fasta_pairs-{set_num}-{target_id}"
-                / f"{stemname}_Chai1.faa"
+                / f"{stemname}_AFformat_Chai1.faa"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             SeqIO.write(chai_records, outpath, "fasta")
@@ -980,7 +979,7 @@ def pairwise_fasta_generation(
                 Path(output_dir)
                 / target_id
                 / f"Boltz2_fasta_pairs-{set_num}-{target_id}"
-                / f"{stemname}_Boltz2.faa"
+                / f"{stemname}_AFformat_Boltz2.faa"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             SeqIO.write(boltz_records, outpath, "fasta")
@@ -991,7 +990,7 @@ def pairwise_fasta_generation(
                 Path(output_dir)
                 / target_id
                 / f"ColabFold_fasta_pairs-{set_num}-{target_id}"
-                / f"{stemname}_ColabFold.faa"
+                / f"{stemname}_AFformat_ColabFold.faa"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             with open(outpath, "w") as f:
