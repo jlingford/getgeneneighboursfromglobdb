@@ -51,13 +51,13 @@ NIFE_LSU_CODES = [
     "COG3261",  # Ni,Fe-hydrogenase III large subunit (HycE2) (PDB:6CFW)
     "COG4042",  # Energy-converting hydrogenase Eha subunit A (EhaA) (PUBMED:19495416)
     "K00333",  # NADH-quinone oxidoreductase subunit D [EC:7.1.1.2]
-    "K00338",  # NADH-quinone oxidoreductase subunit I [EC:7.1.1.2]
     "K00436",  # NAD-reducing hydrogenase large subunit [EC:1.12.1.2]
     "K00437",  # [NiFe] hydrogenase large subunit [EC:1.12.2.1]
     "K00440",  # coenzyme F420 hydrogenase subunit alpha [EC:1.12.98.1]
     "K05922",  # quinone-reactive Ni/Fe-hydrogenase large subunit [EC:1.12.5.1]
     "K06281",  # hydrogenase large subunit [EC:1.12.99.6]
     "K13378",  # NADH-quinone oxidoreductase subunit C/D [EC:7.1.1.2]
+    "K13380",  # NADH-quinone oxidoreductase subunit B/C/D [EC:7.1.1.2]
     "K14068",  # methanophenazine hydrogenase, large subunit [EC:1.12.98.3]
     "K14070",  # methanophenazine hydrogenase [EC:1.12.98.3]
     "K14090",  # ech hydrogenase subunit E
@@ -66,6 +66,7 @@ NIFE_LSU_CODES = [
     "K18016",  # membrane-bound hydrogenase subunit alpha [EC:1.12.7.2]
     "K23549",  # uptake hydrogenase large subunit [EC:1.12.99.6]
     "K23549",  # uptake hydrogenase large subunit [EC:1.12.99.6]
+    "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
     "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
     "PF00346.23",  # Respiratory-chain NADH dehydrogenase, 49 Kd subunit
     "PF00374.23",  # Nickel-dependent hydrogenase
@@ -82,6 +83,7 @@ NIFE_SSU_CODES = [
     "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
     "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
     "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
+    "K13380",  # NADH-quinone oxidoreductase subunit B/C/D [EC:7.1.1.2]
     "K14088",  # ech hydrogenase subunit C
     "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
     "K14128",  # F420-non-reducing hydrogenase small subunit [EC:1.12.99.- 1.8.98.5]
@@ -91,6 +93,7 @@ NIFE_SSU_CODES = [
     "K18023",  # membrane-bound hydrogenase subunit mbhJ [EC:1.12.7.2]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
+    "PF00329.23",  # Respiratory-chain NADH dehydrogenase, 30 Kd subunit
     "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
     "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
 ]
@@ -120,18 +123,27 @@ NIFE_GROUP1_PPI_CODES = [
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
-NIFE_GROUP2_PPI_CODES = []
+NIFE_GROUP2_PPI_CODES = [
+    "COG2427",  # Uncharacterized conserved protein YjgD, DUF1641 family (YjgD)
+    "PF07849.15",  # Protein of unknown function (DUF1641)
+]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 # TODO: add heterodisulfide reductase and other codes
 NIFE_GROUP3_PPI_CODES = [
     "COG1142",  # Fe-S-cluster-containing hydrogenase component 2 (HycB)
+    "COG1148",  # Heterodisulfide reductase, subunit A (polyferredoxin) (HdrA) (PDB:5ODC)
+    "COG1150",  # Heterodisulfide reductase, subunit C (HdrC) (PDB:5ODC)
+    "COG2048",  # Heterodisulfide reductase, subunit B (HdrB) (PDB:5ODC)
     "K00442",  # coenzyme F420 hydrogenase subunit delta
+    "K03388",  # heterodisulfide reductase subunit A2 [EC:1.8.7.3 1.8.98.4 1.8.98.5 1.8.98.6]
+    "K03389",  # heterodisulfide reductase subunit B2 [EC:1.8.7.3 1.8.98.4 1.8.98.5 1.8.98.6]
+    "K03390",  # heterodisulfide reductase subunit C2 [EC:1.8.7.3 1.8.98.4 1.8.98.5 1.8.98.6]
     "K05586",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
     "K05587",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
     "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
-    "K05588",  # bidirectional [NiFe] hydrogenase diaphorase subunit [EC:7.1.1.2]
-    "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
+    "K08264",  # heterodisulfide reductase subunit D [EC:1.8.98.1]
+    "K08265",  # heterodisulfide reductase subunit E [EC:1.8.98.1]
     "K17992",  # NADP-reducing hydrogenase subunit HndB [EC:1.12.1.3]
     "K17995",  # sulfhydrogenase subunit gamma (sulfur reductase) [EC:1.12.98.4]
     "K18005",  # [NiFe] hydrogenase diaphorase moiety large subunit [EC:1.12.1.2]
@@ -140,6 +152,11 @@ NIFE_GROUP3_PPI_CODES = [
     "K18008",  # [NiFe] hydrogenase small subunit [EC:1.12.2.1]
     "K18330",  # NADP-reducing hydrogenase subunit HndA [EC:1.12.1.3]
     "K18331",  # NADP-reducing hydrogenase subunit HndC [EC:1.12.1.3]
+    "K18500",  # heterodisulfide reductase cytochrome b-like subunit
+    "K18501",  # heterodisulfide reductase iron-sulfur subunit
+    "K22480",  # heterodisulfide reductase subunit A1 [EC:1.8.7.3]
+    "K22481",  # heterodisulfide reductase subunit B1 [EC:1.8.7.3]
+    "K22482",  # heterodisulfide reductase subunit C1 [EC:1.8.7.3]
     "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
     "PF04422.17",  # Coenzyme F420 hydrogenase/dehydrogenase, beta subunit N-term
     "PF04432.17",  # Coenzyme F420 hydrogenase/dehydrogenase, beta subunit C terminus
@@ -148,7 +165,28 @@ NIFE_GROUP3_PPI_CODES = [
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 # TODO: add NADH ubiquinone oxidoreductase subunits
 NIFE_GROUP4_PPI_CODES = [
+    "COG0713",  # NADH:ubiquinone oxidoreductase subunit 11 or 4L (chain K) (NuoK) (PDB:4HE8)
+    "COG0838",  # NADH:ubiquinone oxidoreductase subunit 3 (chain A) (NuoA) (PDB:3RKO)
+    "COG0839",  # NADH:ubiquinone oxidoreductase subunit 6 (chain J) (NuoJ) (PDB:4HE8)
+    "COG0852",  # NADH:ubiquinone oxidoreductase 27 kD subunit (chain C) (NuoC)
+    "COG1005",  # NADH:ubiquinone oxidoreductase subunit 1 (chain H) (NuoH) (PDB:6HUM)
+    "COG1007",  # NADH:ubiquinone oxidoreductase subunit 2 (chain N) (NuoN) (PDB:4HE8)
+    "COG1008",  # NADH:ubiquinone oxidoreductase subunit 4 (chain M) (NuoM) (PDB:6HUM)
+    "COG1009",  # Membrane H+-translocase/NADH:ubiquinone oxidoreductase subunit 5 (chain L)/Multisubunit Na+/H+ antiporter, MnhA subunit (NuoL) (PDB:3RKO)
+    "COG1034",  # NADH dehydrogenase/NADH:ubiquinone oxidoreductase 75 kD subunit (chain G) (NuoG) (PDB:1C4A)
+    "COG1034",  # NADH dehydrogenase/NADH:ubiquinone oxidoreductase 75 kD subunit (chain G) (NuoG) (PDB:1C4A)
+    "COG1143",  # Formate hydrogenlyase subunit 6/NADH:ubiquinone oxidoreductase 23 kD subunit (chain I) (NuoI) (PDB:1B0P)
+    "COG1252",  # NADH dehydrogenase, FAD-containing subunit (Ndh) (PDB:5NA4)
+    "COG1347",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrD (NqrD) (PDB:4P6V)
+    "COG1726",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrA (NqrA) (PDB:4P6V)
+    "COG1805",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrB (NqrB) (PDB:4P6V)
+    "COG1894",  # NADH:ubiquinone oxidoreductase, NADH-binding 51 kD subunit (chain F) (NuoF) (PDB:2FUG)
+    "COG1905",  # NADH:ubiquinone oxidoreductase 24 kD subunit (chain E) (NuoE) (PDB:5XF9)
+    "COG2209",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrE (NqrE) (PDB:4P6V)
+    "COG2869",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrC (NqrC) (PDB:4P6V)
+    "COG2871",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrF (NqrF) (PDB:4P6V)
     "COG3262",  # Ni,Fe-hydrogenase III component G (HycE1)
+    "COG3761",  # NADH:ubiquinone oxidoreductase NDUFA12 subunit (Leigh syndrome) (NDUFA12)
     "COG4035",  # Energy-converting hydrogenase Eha subunit L (EhaL) (PUBMED:19495416)
     "COG4036",  # Energy-converting hydrogenase Eha subunit G (EhaG) (PUBMED:19495416)
     "COG4037",  # Energy-converting hydrogenase Eha subunit F (EhaF) (PUBMED:19495416)
@@ -160,8 +198,45 @@ NIFE_GROUP4_PPI_CODES = [
     "COG4078",  # Energy-converting hydrogenase Eha subunit H (EhaH) (PUBMED:19495416)
     "COG4084",  # Energy-converting hydrogenase A subunit M (EhaM) (PDB:1NXH)
     "COG4237",  # Hydrogenase-4 membrane subunit HyfE (HyfE)
+    "K00330",  # NADH-quinone oxidoreductase subunit A [EC:7.1.1.2]
+    "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
+    "K00332",  # NADH-quinone oxidoreductase subunit C [EC:7.1.1.2]
+    "K00334",  # NADH-quinone oxidoreductase subunit E [EC:7.1.1.2]
+    "K00335",  # NADH-quinone oxidoreductase subunit F [EC:7.1.1.2]
+    "K00336",  # NADH-quinone oxidoreductase subunit G [EC:7.1.1.2]
+    "K00337",  # NADH-quinone oxidoreductase subunit H [EC:7.1.1.2]
+    "K00338",  # NADH-quinone oxidoreductase subunit I [EC:7.1.1.2]
+    "K00339",  # NADH-quinone oxidoreductase subunit J [EC:7.1.1.2]
+    "K00340",  # NADH-quinone oxidoreductase subunit K [EC:7.1.1.2]
+    "K00341",  # NADH-quinone oxidoreductase subunit L [EC:7.1.1.2]
+    "K00342",  # NADH-quinone oxidoreductase subunit M [EC:7.1.1.2]
+    "K00343",  # NADH-quinone oxidoreductase subunit N [EC:7.1.1.2]
+    "K00346",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit A [EC:7.2.1.1]
+    "K00347",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit B [EC:7.2.1.1]
+    "K00348",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit C [EC:7.2.1.1]
+    "K00349",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit D [EC:7.2.1.1]
+    "K00350",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit E [EC:7.2.1.1]
+    "K00351",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit F [EC:7.2.1.1]
+    "K03934",  # NADH dehydrogenase (ubiquinone) Fe-S protein 1 [EC:7.1.1.2]
+    "K03935",  # NADH dehydrogenase (ubiquinone) Fe-S protein 2 [EC:7.1.1.2]
+    "K03936",  # NADH dehydrogenase (ubiquinone) Fe-S protein 3 [EC:7.1.1.2]
+    "K03937",  # NADH dehydrogenase (ubiquinone) Fe-S protein 4
+    "K03938",  # NADH dehydrogenase (ubiquinone) Fe-S protein 5
+    "K03939",  # NADH dehydrogenase (ubiquinone) Fe-S protein 6
+    "K03940",  # NADH dehydrogenase (ubiquinone) Fe-S protein 7 [EC:7.1.1.2]
+    "K03941",  # NADH dehydrogenase (ubiquinone) Fe-S protein 8 [EC:7.1.1.2]
+    "K03942",  # NADH dehydrogenase (ubiquinone) flavoprotein 1 [EC:7.1.1.2]
+    "K03943",  # NADH dehydrogenase (ubiquinone) flavoprotein 2 [EC:7.1.1.2]
+    "K03945",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 1
+    "K03951",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 7
+    "K03952",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 8
+    "K03953",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 9
+    "K03955",  # NADH dehydrogenase (ubiquinone) 1 alpha/beta subcomplex 1, acyl-carrier protein
     "K06862",  # energy-converting hydrogenase B subunit Q
     "K06862",  # energy-converting hydrogenase B subunit Q
+    "K09008",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 3
+    "K11352",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 12
+    "K11353",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 13
     "K12136",  # hydrogenase-4 component A [EC:1.-.-.-]
     "K12137",  # hydrogenase-4 component B [EC:1.-.-.-]
     "K12138",  # hydrogenase-4 component C [EC:1.-.-.-]
@@ -210,11 +285,26 @@ NIFE_GROUP4_PPI_CODES = [
     "K14123",  # energy-converting hydrogenase B subunit N
     "K14124",  # energy-converting hydrogenase B subunit O
     "K14125",  # energy-converting hydrogenase B subunit P
+    "K15863",  # NADH-quinone oxidoreductase subunit L/M [EC:7.1.1.2]
     "K18017",  # membrane-bound hydrogenase subunit beta [EC:1.12.7.2]
+    "K18159",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 1
+    "K18162",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 5 [EC:2.1.1.-]
+    "K18163",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 6
+    "K18164",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 7
     "K22015",  # formate dehydrogenase (hydrogenase) [EC:1.17.98.4 1.17.98.-]
     "PF00146.25",  # NADH dehydrogenase
+    "PF00146.25",  # NADH dehydrogenase
+    "PF01512.21",  # Respiratory-chain NADH dehydrogenase 51 Kd subunit
+    "PF04800.16",  # NADH dehydrogenase ubiquinone Fe-S protein 4
+    "PF06235.15",  # NADH dehydrogenase subunit 4L (NAD4L)
+    "PF06455.15",  # NADH dehydrogenase subunit 5 C-terminus
     "PF09877.13",  # Energy-converting hydrogenase subunit EhaL
+    "PF10125.13",  # NADH dehydrogenase I, subunit N related protein
+    "PF10200.13",  # NADH:ubiquinone oxidoreductase, NDUFS5-15kDa
     "PF10622.13",  # Energy-converting hydrogenase B subunit P (EhbP)
+    "PF10716.13",  # NADH dehydrogenase transmembrane subunit
+    "PF11497.12",  # NADH-quinone oxidoreductase chain 15
+    "PF11909.12",  # NADH-quinone oxidoreductase cyanobacterial subunit N
     "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
     "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
 ]
@@ -239,6 +329,7 @@ NIFE_MATURATION_CODES = [
     "COG0378",  # Hydrogenase/urease maturation factor HypB, Ni2+-binding GTPase (HypB) (PDB:2HF8) (PUBMED:24338018;23899293)
     "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
     "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
+    "COG0694",  # Fe-S cluster biogenesis protein NfuA, 4Fe-4S-binding domain (NifU) (PDB:2Z51)
     "COG1973",  # Hydrogenase maturation factor HypE (HypE2)
     "COG2370",  # Hydrogenase/urease accessory protein HupE (HupE)
     "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
@@ -753,7 +844,7 @@ def extract_gene_neighbourhood(
         f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {gff_outpath.name}"
     )
 
-    # Execute downstream functions, contigent on args:
+    # Execute downstream functions:
 
     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
     anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
@@ -817,6 +908,7 @@ def extract_nife_ssu(
     )
 
     # identify candidate matching codes
+    # TODO: use annotation table instead of single attributes column... do same for gff_extract function
     ssu_candidates = neighbours.filter(
         pl.any_horizontal(
             [pl.col("attributes").str.contains(code) for code in NIFE_SSU_CODES]
