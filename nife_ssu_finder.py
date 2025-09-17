@@ -854,8 +854,7 @@ def extract_gene_neighbourhood(
     if args.no_plot is not True:
         plot_gene_neighbourhood(args, gene_name, gff_input_file, goi_start, goi_end)
 
-    # extract fasta files. Handle cases where either a parent dir or file is provided as an argument
-    # NOTE: adding the gene IDs list without maturation genes
+    # extract fasta sequences
     fasta_file_subset = fasta_neighbourhood_extract(
         args,
         gene_name,
