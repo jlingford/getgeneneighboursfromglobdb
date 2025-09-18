@@ -41,7 +41,7 @@ kofam_annodf = full_annodf.filter(pl.col("db_xref") == "KOfam")
 cogfun_annodf = full_annodf.filter(pl.col("db_xref") == "COG20_FUNCTION")
 
 gff = raw_gff.with_columns(
-    pl.col("attributes").str.extract(r"ID=([^;]+)", 1).alias("ID"),
+    pl.col("attributes").str.extract(r"ID=([^;]+)(?:;|$)", 1).alias("ID"),
     pl.col("attributes")
     .str.extract(r"ID=.*___(\d+)(?:;|$)", 1)
     .cast(pl.Int32)
