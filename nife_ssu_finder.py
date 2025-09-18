@@ -330,6 +330,7 @@ def extract_gene_neighbourhood(
             & (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
+            & (pl.col("type") == "CDS")
         )
     else:
         # gff of all genes in the target neighbourhood
@@ -337,6 +338,7 @@ def extract_gene_neighbourhood(
             (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
+            & (pl.col("type") == "CDS")
         )
 
     # return list of gene IDs for fasta file output, called at end of this function
@@ -372,7 +374,13 @@ def extract_gene_neighbourhood(
         schema_overrides={"evalue": pl.Float64},
     )
 
-    # filter to different HMM codes
+    # clean rows that contain "!!!" in their names and description, only keeping the first name and description
+    anno_df = anno_df.with_columns(
+        pl.col("Name").str.extract(r"([^!]+)"),
+        pl.col("product").str.extract(r"([^!]+)"),
+    )
+
+    # filter to use only certain HMM codes
     anno_df = anno_df  # default
     if args.pfam_only:
         anno_df = anno_df.filter(pl.col("db_xref") == "Pfam")
@@ -384,7 +392,7 @@ def extract_gene_neighbourhood(
     # merge gff_subset with anno_df on shared gene ID
     merge_gff_anno = blank_gff.join(anno_df, on="ID", how="left")
 
-    rebuilt_gff = (
+    rebuilt_gff_full = (
         merge_gff_anno.with_columns(
             pl.when(pl.col("Name").is_not_null())
             .then(
@@ -416,6 +424,11 @@ def extract_gene_neighbourhood(
             ]
         )
         .sort(by=["ID_num", "evalue"])
+    )
+
+    # keep only the best annotation row per ID
+    rebuilt_gff_uniq = (
+        rebuilt_gff_full.unique(subset="ID", keep="first")
         .unique(subset="ID", keep="first")
         .sort(by="ID_num")
         .select(
@@ -433,10 +446,25 @@ def extract_gene_neighbourhood(
         )
     )
 
-    # find list of genes in merged_gff dataframe that match HMM codes lists
+    # get a gene list of just SSU candidates
+    gff_subset_ssus = rebuilt_gff_full.filter(
+        pl.col("attributes").str.contains_any(NIFE_SSU_CODES)
+        & (~pl.col("attributes").str.contains(rf"ID={gene_name}(?:;|$)"))
+    )
+    # gene_ids_ssu_candidates: list = (
+    #     gff_subset_ssus.select(
+    #         pl.col("attributes")
+    #         .str.extract_groups(r"ID=([^;]+)")
+    #         .struct.field("1")
+    #         .alias("gene_id")
+    #     )
+    #     .to_series()
+    #     .unique()
+    #     .to_list()
+    # )
 
     # gff subset WITHOUT maturation genes, for smaller fasta file extraction
-    gff_subset_nomaturation = rebuilt_gff.filter(
+    gff_subset_nomaturation = rebuilt_gff_full.filter(
         (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
     )
     gene_ids_nomaturation: list = (
@@ -452,7 +480,7 @@ def extract_gene_neighbourhood(
     )
 
     # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
-    gff_subset_ppi_candidates = rebuilt_gff.filter(
+    gff_subset_ppi_candidates = rebuilt_gff_full.filter(
         (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
     )
     gene_ids_ppi_candidates: list = (
@@ -468,6 +496,7 @@ def extract_gene_neighbourhood(
     )
 
     # Write output
+    gff_dataframe_to_write = rebuilt_gff_uniq
     if args.kofam_only:
         gff_outpath = (
             Path(output_dir)
@@ -486,14 +515,25 @@ def extract_gene_neighbourhood(
             / gene_name
             / f"{gene_name}___gene_neighbours_COGFUN_annotations.gff"
         )
+    elif args.retain_full_gff:
+        gff_outpath = (
+            Path(output_dir)
+            / gene_name
+            / f"{gene_name}-gene_neighbours_all_combined_annotations.gff"
+        )
+        gff_dataframe_to_write = (
+            rebuilt_gff_full  # keep all non-unique rows in gff file
+        )
     else:
         gff_outpath = (
             Path(output_dir)
             / gene_name
             / f"{gene_name}___gene_neighbours_combined_annotations.gff"
         )
+
     gff_outpath.parent.mkdir(exist_ok=True, parents=True)
-    gff_subset.write_csv(
+
+    gff_dataframe_to_write.write_csv(
         gff_outpath,
         separator="\t",
         include_header=False,
