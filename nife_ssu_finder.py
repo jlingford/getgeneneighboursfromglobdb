@@ -32,22 +32,16 @@ from constants.nife_hmm_codes import (
     IRON_HYDROGENASE_CODES,
 )
 import shutil
-from ast import List
 from io import TextIOWrapper
-from os import path, sep
 from string import ascii_uppercase
 import pickle
 import gzip
 import logging
 import argparse
-from operator import ge
 import textwrap
-from numpy import argsort
 import polars as pl
-import seaborn as sns
 from BCBio import GFF
 from pathlib import Path
-from typing import TextIO
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
