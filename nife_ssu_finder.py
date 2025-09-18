@@ -696,24 +696,31 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     anno_args.add_argument(
+        "--retain_full_gff",
+        dest="retain_full_gff",
+        action="store_true",
+        help="Keep all gene annotations in .gff file, will plot all info too [Default: retain only best scoring evalue annotations in output .gff file]",
+    )
+
+    anno_args.add_argument(
         "--kofam_only",
         dest="kofam_only",
         action="store_true",
-        help="Use only KOfam annotations in final gene neighbourhood plot [Default: uses best out of all types of annotations]",
+        help="Use only KOfam annotations in final gene neighbourhood plot [Default: uses best out of all types of annotations per gene]",
     )
 
     anno_args.add_argument(
         "--pfam_only",
         dest="pfam_only",
         action="store_true",
-        help="Use only Pfam annotations in final gene neighbourhood plot [Default: uses best out of all types of annotations]",
+        help="Use only Pfam annotations in final gene neighbourhood plot [Default: uses best out of all types of annotations per gene]",
     )
 
     anno_args.add_argument(
         "--cogfun_only",
         dest="cogfun_only",
         action="store_true",
-        help="Use only COG20_FUNCTION annotations in final gene neighbourhood plot [Default: uses best out of all types of annotations]",
+        help="Use only COG20_FUNCTION annotations in final gene neighbourhood plot [Default: uses best out of all types of annotations per gene]",
     )
 
     # Parse arguments into args object
