@@ -16,6 +16,7 @@ full_annodf = pl.read_csv(
     schema_overrides={"evalue": pl.Float64},
 )
 
+
 # load .gff file of genome
 raw_gff = pl.read_csv(
     gff_file,
