@@ -740,98 +740,6 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-# def replace_gff_attributes(
-#     args: argparse.Namespace,
-#     gene_name: str,
-#     gff_file: Path,
-#     annotation_file: Path,
-# ) -> pl.DataFrame:
-#     """Rewrite the attributes column of the gff file with KOfam annotation information instead of the default COG20_FUNCTION annotations"""
-#     # params
-#     gff_file = gff_file
-#     annotation_file = annotation_file
-#     gene_name = gene_name
-#
-#     # load master annotation table of genome
-#     df = pl.read_csv(
-#         annotation_file,
-#         separator="\t",
-#         quote_char=None,
-#         has_header=True,
-#         new_columns=["ID", "db_xref", "Name", "product", "evalue"],
-#         schema_overrides={"evalue": pl.Float64},
-#     )
-#
-#     # keep only rows of KOfam or Pfam annotations, and only the best evalue per gene ID
-#     if args.use_kofam_annotation is True:
-#         df = df.filter(pl.col("db_xref") == "KOfam")
-#     if args.use_pfam_annotation is True:
-#         df = df.filter(pl.col("db_xref") == "Pfam")
-#
-#     # df = df.sort("evalue").group_by("ID").first()
-#     df = df.unique(subset=["ID"], maintain_order=True)
-#
-#     # load .gff file of genome
-#     gff = pl.read_csv(
-#         gff_file,
-#         separator="\t",
-#         quote_char=None,
-#         has_header=False,
-#         new_columns=[
-#             "seqid",
-#             "source",
-#             "type",
-#             "start",
-#             "end",
-#             "score",
-#             "strand",
-#             "phase",
-#             "attributes",
-#         ],
-#     )
-#
-#     # gene ID is conatined within the attributes column. extract it, and use it as the key for merging with the annotations table
-#     gff = gff.with_columns(
-#         pl.col("attributes").str.extract(r"ID=([^;]+)", 1).alias("ID")
-#     )
-#
-#     # merge gff table and annotations table based on the shared gene ID
-#     merged_gff = gff.join(df, on="ID", how="left")
-#
-#     # remake the gff attributes column using KOfam annotation information from the annotations table
-#     merged_gff = merged_gff.with_columns(
-#         pl.when(pl.col("Name").is_not_null())
-#         .then(
-#             pl.format(
-#                 "ID={};Name={};db_xref={};product={}",
-#                 pl.col("ID"),
-#                 pl.col("Name"),
-#                 pl.col("db_xref"),
-#                 pl.col("product"),
-#             )
-#         )
-#         .otherwise(pl.col("attributes"))
-#         .alias("attributes")
-#     )
-#
-#     # discard the columns of the merged gff df that aren't native to the .gff format
-#     new_gff = merged_gff.select(
-#         [
-#             "seqid",
-#             "source",
-#             "type",
-#             "start",
-#             "end",
-#             "score",
-#             "strand",
-#             "phase",
-#             "attributes",
-#         ]
-#     )
-#
-#     return new_gff
-
-
 def extract_gene_neighbourhood(
     args: argparse.Namespace,
     gene_name: str,
@@ -919,11 +827,6 @@ def extract_gene_neighbourhood(
         .alias("ID_num"),
     )
 
-    # # add column to gff of gene id to merge on with annotation df
-    # gff_subset = gff_subset.with_columns(
-    #     pl.col("attributes").str.extract(r"ID=([^;]+)", 1).alias("ID")
-    # )
-
     # read in dataframe of annotation file subset
     anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
     anno_df = pl.read_csv(
@@ -995,34 +898,6 @@ def extract_gene_neighbourhood(
             ]
         )
     )
-
-    # # reformat the attributes column with annotation info from recently merged columns, and then drop non-gff columns
-    # merged_gff = merged_df.with_columns(
-    #     pl.when(pl.col("Name").is_not_null())
-    #     .then(
-    #         pl.format(
-    #             "ID={};Name={};db_xref={};product={}",
-    #             pl.col("ID"),
-    #             pl.col("Name"),
-    #             pl.col("db_xref"),
-    #             pl.col("product"),
-    #         )
-    #     )
-    #     .otherwise(pl.col("attributes"))
-    #     .alias("attributes")
-    # ).select(
-    #     [
-    #         "seqid",
-    #         "source",
-    #         "type",
-    #         "start",
-    #         "end",
-    #         "score",
-    #         "strand",
-    #         "phase",
-    #         "attributes",
-    #     ]
-    # )
 
     # find list of genes in merged_gff dataframe that match HMM codes lists
 
