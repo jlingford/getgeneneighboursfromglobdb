@@ -18,6 +18,19 @@ Control flow:
 # add logging output to argparse function
 
 # imports
+from re import sub
+from constants.nife_hmm_codes import (
+    NIFE_LSU_CODES,
+    NIFE_SSU_CODES,
+    NIFE_FRHB_CODES,
+    NIFE_GROUP2_PPI_CODES,
+    NIFE_GROUP1_PPI_CODES,
+    NIFE_GROUP3_PPI_CODES,
+    NIFE_GROUP4_PPI_CODES,
+    NIFE_MATURATION_CODES,
+    NIFE_PPI_CANDIDATES,
+    IRON_HYDROGENASE_CODES,
+)
 import shutil
 from ast import List
 from io import TextIOWrapper
