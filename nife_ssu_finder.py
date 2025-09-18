@@ -774,13 +774,13 @@ def plot_gene_neighbourhood(
         ha="left",
         va="top",
         fontsize=12,
-        style="italic",
+        style="normal",
     )
 
     # save figure
     outpath = Path(output_dir) / gene_name / f"{gene_name}___plot.{format}"
     outpath.parent.mkdir(exist_ok=True, parents=True)
-    ax.figure.savefig(outpath, dpi=dpi, format=format)
+    ax.figure.savefig(outpath, dpi=dpi, format=format, bbox_inches="tight")
     # close figure to avoid memory issues
     plt.close("all")
 
