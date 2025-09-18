@@ -21,7 +21,7 @@ Control flow:
 import shutil
 from ast import List
 from io import TextIOWrapper
-from os import path
+from os import path, sep
 from string import ascii_uppercase
 import pickle
 import gzip
@@ -307,6 +307,19 @@ NIFE_GROUP4_PPI_CODES = [
     "PF11909.12",  # NADH-quinone oxidoreductase cyanobacterial subunit N
     "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
     "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
+    "COG0650",  # Formate hydrogenlyase subunit HyfC (HyfC) (PDB:6CFW)
+    "COG0650",  # Formate hydrogenlyase subunit HyfC (HyfC) (PDB:6CFW)
+    "COG0651",  # Formate hydrogenlyase subunit 3/Multisubunit Na+/H+ antiporter, MnhD subunit (HyfB) (PDB:6CFW)
+    "COG1143",  # Formate hydrogenlyase subunit 6/NADH:ubiquinone oxidoreductase 23 kD subunit (chain I) (NuoI) (PDB:1B0P)
+    "K15827",  # formate hydrogenlyase subunit 2
+    "K15828",  # formate hydrogenlyase subunit 3
+    "K15829",  # formate hydrogenlyase subunit 4
+    "K15830",  # formate hydrogenlyase subunit 5
+    "K15831",  # formate hydrogenlyase subunit 6
+    "K15832",  # formate hydrogenlyase subunit 7
+    "PF00361.24",  # Proton-conducting membrane transporter
+    "PF00662.24",  # NADH-Ubiquinone oxidoreductase (complex I), chain 5 N-terminus
+    "COG1009",  # Membrane H+-translocase/NADH:ubiquinone oxidoreductase subunit 5 (chain L)/Multisubunit Na+/H+ antiporter, MnhA subunit (NuoL) (PDB:3RKO)
 ]
 
 # WARN: hardcoded HMM annotation codes for all possible NiFe PPI partners
@@ -356,6 +369,10 @@ NIFE_MATURATION_CODES = [
     "PF07449.15",  # Hydrogenase-1 expression protein HyaE
     "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
     "PF21699.1",  # Iron-only hydrogenase system regulator, putative
+    "K15833",  # formate hydrogenlyase regulatory protein HycA
+    "K15834",  # formate hydrogenlyase maturation protein HycH
+    "K15836",  # formate hydrogenlyase transcriptional activator
+    "PF07450.15",  # Formate hydrogenlyase maturation protein HycH
 ]
 
 IRON_HYDROGENASE_CODES = [
@@ -692,35 +709,29 @@ def extract_gene_neighbourhood(
     upstream_window = args.upstream_window  # Size of window upstream/downstream
     downstream_window = args.downstream_window  # Size of window upstream/downstream
 
-    # load gff dataframe
-    if args.use_kofam_annotation is True:
-        gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
-    elif args.use_pfam_annotation is True:
-        gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
-    else:
-        gff = pl.read_csv(
-            gff_file,
-            separator="\t",
-            quote_char=None,
-            has_header=False,
-            new_columns=[
-                "seqid",
-                "source",
-                "type",
-                "start",
-                "end",
-                "score",
-                "strand",
-                "phase",
-                "attributes",
-            ],
-        )
+    # step 1: get gff subset
+    gff = pl.read_csv(
+        gff_file,
+        separator="\t",
+        quote_char=None,
+        comment_prefix="#",
+        has_header=False,
+        new_columns=[
+            "seqid",
+            "source",
+            "type",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "phase",
+            "attributes",
+        ],
+    )
 
     # Find gene of interest (GOI) in .gff file
     # NOTE: hardcoded to look for ID=
-    goi_row = gff.filter(pl.col("attributes").str.contains(f"ID={gene_name}"))
-    # if goi_row.empty:
-    #     raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
+    goi_row = gff.filter(pl.col("attributes").str.contains(f"ID={gene_name}(?:;|$)"))
 
     # Get genetic neighbourhood coordinates to center on gene of interest
     goi_start = goi_row[0, "start"]
@@ -741,42 +752,12 @@ def extract_gene_neighbourhood(
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
         )
-        # gff subset WITHOUT maturation genes, for smaller fasta file extraction
-        gff_subset_nomaturation = gff.filter(
-            (pl.col("strand") == goi_strand)
-            & (pl.col("seqid") == goi_scaffold)
-            & (pl.col("start") <= window_end)
-            & (pl.col("end") >= window_start)
-            & (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
-        )
-        # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
-        gff_subset_ppi_candidates = gff.filter(
-            (pl.col("strand") == goi_strand)
-            & (pl.col("seqid") == goi_scaffold)
-            & (pl.col("start") <= window_end)
-            & (pl.col("end") >= window_start)
-            & (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
-        )
     else:
         # gff of all genes in the target neighbourhood
         gff_subset = gff.filter(
             (pl.col("seqid") == goi_scaffold)
             & (pl.col("start") <= window_end)
             & (pl.col("end") >= window_start)
-        )
-        # gff subset WITHOUT maturation genes, for smaller fasta file extraction
-        gff_subset_nomaturation = gff.filter(
-            (pl.col("seqid") == goi_scaffold)
-            & (pl.col("start") <= window_end)
-            & (pl.col("end") >= window_start)
-            & (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
-        )
-        # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
-        gff_subset_ppi_candidates = gff.filter(
-            (pl.col("seqid") == goi_scaffold)
-            & (pl.col("start") <= window_end)
-            & (pl.col("end") >= window_start)
-            & (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
         )
 
     # return list of gene IDs for fasta file output, called at end of this function
@@ -788,9 +769,65 @@ def extract_gene_neighbourhood(
             .alias("gene_id")
         )
         .to_series()
+        .unique()
         .to_list()
     )
 
+    # add column to gff of gene id to merge on with annotation df
+    gff_subset = gff_subset.with_columns(
+        pl.col("attributes").str.extract(r"ID=([^;]+)", 1).alias("ID")
+    )
+
+    # extract annotation file subset
+    anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
+
+    # read in dataframe of annotation file subset
+    anno_df = pl.read_csv(
+        anno_file_subset,
+        separator="\t",
+        quote_char=None,
+        has_header=True,
+        new_columns=["ID", "db_xref", "Name", "product", "evalue"],
+        schema_overrides={"evalue": pl.Float64},
+    )
+
+    # merge gff_subset with anno_df on shared gene ID
+    merged_df = gff_subset.join(anno_df, on="ID", how="left")
+
+    # reformat the attributes column with annotation info from recently merged columns, and then drop non-gff columns
+    merged_gff = merged_df.with_columns(
+        pl.when(pl.col("Name").is_not_null())
+        .then(
+            pl.format(
+                "ID={};Name={};db_xref={};product={}",
+                pl.col("ID"),
+                pl.col("Name"),
+                pl.col("db_xref"),
+                pl.col("product"),
+            )
+        )
+        .otherwise(pl.col("attributes"))
+        .alias("attributes")
+    ).select(
+        [
+            "seqid",
+            "source",
+            "type",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "phase",
+            "attributes",
+        ]
+    )
+
+    # find list of genes in merged_gff dataframe that match HMM codes lists
+
+    # gff subset WITHOUT maturation genes, for smaller fasta file extraction
+    gff_subset_nomaturation = merged_gff.filter(
+        (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
+    )
     gene_ids_nomaturation: list = (
         gff_subset_nomaturation.select(
             pl.col("attributes")
@@ -799,9 +836,14 @@ def extract_gene_neighbourhood(
             .alias("gene_id")
         )
         .to_series()
+        .unique()
         .to_list()
     )
 
+    # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
+    gff_subset_ppi_candidates = merged_gff.filter(
+        (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
+    )
     gene_ids_ppi_candidates: list = (
         gff_subset_ppi_candidates.select(
             pl.col("attributes")
@@ -810,29 +852,35 @@ def extract_gene_neighbourhood(
             .alias("gene_id")
         )
         .to_series()
+        .unique()
         .to_list()
     )
 
-    # Write output
-    if args.use_kofam_annotation is True:
-        gff_outpath = (
-            Path(output_dir)
-            / gene_name
-            / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
-        )
-    elif args.use_pfam_annotation is True:
-        gff_outpath = (
-            Path(output_dir)
-            / gene_name
-            / f"{gene_name}___gene_neighbours_Pfam_annotations.gff"
-        )
-    else:
-        gff_outpath = (
-            Path(output_dir)
-            / gene_name
-            / f"{gene_name}___gene_neighbours_COG20_annotations.gff"
-        )
-
+    # # load gff dataframe
+    # if args.use_kofam_annotation is True:
+    #     gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
+    # elif args.use_pfam_annotation is True:
+    #     gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
+    #
+    # # Write output
+    # if args.use_kofam_annotation is True:
+    #     gff_outpath = (
+    #         Path(output_dir)
+    #         / gene_name
+    #         / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
+    #     )
+    # elif args.use_pfam_annotation is True:
+    #     gff_outpath = (
+    #         Path(output_dir)
+    #         / gene_name
+    #         / f"{gene_name}___gene_neighbours_Pfam_annotations.gff"
+    #     )
+    # else:
+    gff_outpath = (
+        Path(output_dir)
+        / gene_name
+        / f"{gene_name}___gene_neighbours_COG20_annotations.gff"
+    )
     gff_outpath.parent.mkdir(exist_ok=True, parents=True)
     gff_subset.write_csv(
         gff_outpath,
@@ -845,9 +893,6 @@ def extract_gene_neighbourhood(
     )
 
     # Execute downstream functions:
-
-    # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
-    anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
 
     # plot gene neighbourhood figure
     gff_input_file = gff_outpath
@@ -870,6 +915,202 @@ def extract_gene_neighbourhood(
         extract_nife_ssu(
             args, gene_name, anno_file_subset, gff_subset, fasta_file_subset
         )
+
+
+# def extract_gene_neighbourhood(
+#     args: argparse.Namespace,
+#     gene_name: str,
+#     gff_file: Path,
+#     anno_file: Path,
+#     fasta_file: Path,
+# ) -> None:
+#     """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
+#     # params
+#     output_dir = args.output_dir  # Your output file
+#     upstream_window = args.upstream_window  # Size of window upstream/downstream
+#     downstream_window = args.downstream_window  # Size of window upstream/downstream
+#
+#     # load gff dataframe
+#     if args.use_kofam_annotation is True:
+#         gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
+#     elif args.use_pfam_annotation is True:
+#         gff = replace_gff_attributes(args, gene_name, gff_file, anno_file)
+#     else:
+#         gff = pl.read_csv(
+#             gff_file,
+#             separator="\t",
+#             quote_char=None,
+#             has_header=False,
+#             new_columns=[
+#                 "seqid",
+#                 "source",
+#                 "type",
+#                 "start",
+#                 "end",
+#                 "score",
+#                 "strand",
+#                 "phase",
+#                 "attributes",
+#             ],
+#         )
+#
+#     # Find gene of interest (GOI) in .gff file
+#     # NOTE: hardcoded to look for ID=
+#     goi_row = gff.filter(pl.col("attributes").str.contains(f"ID={gene_name}(?:;|$)"))
+#     # if goi_row.empty:
+#     #     raise ValueError(f"Gene '{gene_name}' not found in target .gff file.")
+#
+#     # Get genetic neighbourhood coordinates to center on gene of interest
+#     goi_start = goi_row[0, "start"]
+#     goi_end = goi_row[0, "end"]
+#     goi_scaffold = goi_row[0, "seqid"]
+#     goi_strand = goi_row[0, "strand"]
+#
+#     # Define window coordinates
+#     window_start: int = max(goi_start - upstream_window, 0)
+#     window_end: int = goi_end + downstream_window
+#
+#     # Get subset of gff file based on window. Get genes from both strands, unless -S|--one_strand flag is provided
+#     if args.one_strand is True:
+#         # gff of all genes in the target neighbourhood
+#         gff_subset = gff.filter(
+#             (pl.col("strand") == goi_strand)
+#             & (pl.col("seqid") == goi_scaffold)
+#             & (pl.col("start") <= window_end)
+#             & (pl.col("end") >= window_start)
+#         )
+#         # gff subset WITHOUT maturation genes, for smaller fasta file extraction
+#         gff_subset_nomaturation = gff.filter(
+#             (pl.col("strand") == goi_strand)
+#             & (pl.col("seqid") == goi_scaffold)
+#             & (pl.col("start") <= window_end)
+#             & (pl.col("end") >= window_start)
+#             & (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
+#         )
+#         # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
+#         gff_subset_ppi_candidates = gff.filter(
+#             (pl.col("strand") == goi_strand)
+#             & (pl.col("seqid") == goi_scaffold)
+#             & (pl.col("start") <= window_end)
+#             & (pl.col("end") >= window_start)
+#             & (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
+#         )
+#     else:
+#         # gff of all genes in the target neighbourhood
+#         gff_subset = gff.filter(
+#             (pl.col("seqid") == goi_scaffold)
+#             & (pl.col("start") <= window_end)
+#             & (pl.col("end") >= window_start)
+#         )
+#         # gff subset WITHOUT maturation genes, for smaller fasta file extraction
+#         gff_subset_nomaturation = gff.filter(
+#             (pl.col("seqid") == goi_scaffold)
+#             & (pl.col("start") <= window_end)
+#             & (pl.col("end") >= window_start)
+#             & (~pl.col("attributes").str.contains_any(NIFE_MATURATION_CODES))
+#         )
+#         # gff subset WITH ONLY relevant PPI candidates for even smaller fasta file candidates
+#         gff_subset_ppi_candidates = gff.filter(
+#             (pl.col("seqid") == goi_scaffold)
+#             & (pl.col("start") <= window_end)
+#             & (pl.col("end") >= window_start)
+#             & (pl.col("attributes").str.contains_any(NIFE_PPI_CANDIDATES))
+#         )
+#
+#     # return list of gene IDs for fasta file output, called at end of this function
+#     gene_ids: list = (
+#         gff_subset.select(
+#             pl.col("attributes")
+#             .str.extract_groups(r"ID=([^;]+)")
+#             .struct.field("1")
+#             .alias("gene_id")
+#         )
+#         .to_series()
+#         .unique()
+#         .to_list()
+#     )
+#
+#     gene_ids_nomaturation: list = (
+#         gff_subset_nomaturation.select(
+#             pl.col("attributes")
+#             .str.extract_groups(r"ID=([^;]+)")
+#             .struct.field("1")
+#             .alias("gene_id")
+#         )
+#         .to_series()
+#         .unique()
+#         .to_list()
+#     )
+#
+#     gene_ids_ppi_candidates: list = (
+#         gff_subset_ppi_candidates.select(
+#             pl.col("attributes")
+#             .str.extract_groups(r"ID=([^;]+)")
+#             .struct.field("1")
+#             .alias("gene_id")
+#         )
+#         .to_series()
+#         .unique()
+#         .to_list()
+#     )
+#
+#     # Write output
+#     if args.use_kofam_annotation is True:
+#         gff_outpath = (
+#             Path(output_dir)
+#             / gene_name
+#             / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
+#         )
+#     elif args.use_pfam_annotation is True:
+#         gff_outpath = (
+#             Path(output_dir)
+#             / gene_name
+#             / f"{gene_name}___gene_neighbours_Pfam_annotations.gff"
+#         )
+#     else:
+#         gff_outpath = (
+#             Path(output_dir)
+#             / gene_name
+#             / f"{gene_name}___gene_neighbours_COG20_annotations.gff"
+#         )
+#
+#     gff_outpath.parent.mkdir(exist_ok=True, parents=True)
+#     gff_subset.write_csv(
+#         gff_outpath,
+#         separator="\t",
+#         include_header=False,
+#     )
+#     # TODO: make a logging file
+#     print(
+#         f"Extracted region ({window_start}-{window_end}) on {goi_scaffold} written to: {gff_outpath.name}"
+#     )
+#
+#     # Execute downstream functions:
+#
+#     # extract annotation files. Handle cases where either a parent dir or file is provided as an argument
+#     anno_file_subset = annotation_extract(args, gene_name, anno_file, gene_ids)
+#
+#     # plot gene neighbourhood figure
+#     gff_input_file = gff_outpath
+#     if args.no_plot is not True:
+#         plot_gene_neighbourhood(args, gene_name, gff_input_file, goi_start, goi_end)
+#
+#     # extract fasta sequences
+#     fasta_file_subset = fasta_neighbourhood_extract(
+#         args,
+#         gene_name,
+#         fasta_file,
+#         anno_file_subset,
+#         gene_ids,
+#         gene_ids_nomaturation,
+#         gene_ids_ppi_candidates,
+#     )
+#
+#     # call nife ssu extractor, uses fasta file generated from previous step as input
+#     if args.no_ssu is not True:
+#         extract_nife_ssu(
+#             args, gene_name, anno_file_subset, gff_subset, fasta_file_subset
+#         )
 
 
 def extract_nife_ssu(
