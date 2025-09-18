@@ -78,11 +78,14 @@ NIFE_SSU_CODES = [
     "COG1740",  # Ni,Fe-hydrogenase I small subunit (HyaA) (PDB:6FPI)
     "COG1941",  # Coenzyme F420-reducing hydrogenase, gamma subunit (FrhG) (PDB:5ODC)
     "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
+    "COG3894",  # Uncharacterized 2Fe-2S and 4Fe-4S clusters-containing protein, contains DUF4445 domain (PDB:4C1N)
+    "K00205",  # 4Fe-4S ferredoxin
     "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
     "K00443",  # coenzyme F420 hydrogenase subunit gamma [EC:1.12.98.1]
     "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
     "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
     "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
+    "K11260",  # 4Fe-4S ferredoxin
     "K13380",  # NADH-quinone oxidoreductase subunit B/C/D [EC:7.1.1.2]
     "K14088",  # ech hydrogenase subunit C
     "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
@@ -92,19 +95,71 @@ NIFE_SSU_CODES = [
     "K18007",  # NAD-reducing hydrogenase small subunit [EC:1.12.1.2]
     "K18023",  # membrane-bound hydrogenase subunit mbhJ [EC:1.12.7.2]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
-    "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
+    "PF00037.31",  # 4Fe-4S binding domain
+    "PF00142.22",  # 4Fe-4S iron sulfur cluster binding proteins, NifH/frxC family
     "PF00329.23",  # Respiratory-chain NADH dehydrogenase, 30 Kd subunit
     "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
+    "PF01077.26",  # Nitrite and sulphite reductase 4Fe-4S domain
+    "PF05187.17",  # Electron transfer flavoprotein-ubiquinone oxidoreductase, 4Fe-4S
+    "PF06902.15",  # Divergent 4Fe-4S mono-cluster
+    "PF12797.11",  # 4Fe-4S binding domain
+    "PF12798.11",  # 4Fe-4S binding domain
+    "PF12800.11",  # 4Fe-4S binding domain
+    "PF12801.11",  # 4Fe-4S binding domain
+    "PF12837.11",  # 4Fe-4S binding domain
+    "PF12838.11",  # 4Fe-4S dicluster domain
+    "PF13183.10",  # 4Fe-4S dicluster domain
+    "PF13187.10",  # 4Fe-4S dicluster domain
+    "PF13237.10",  # 4Fe-4S dicluster domain
+    "PF13247.10",  # 4Fe-4S dicluster domain
+    "PF13353.10",  # 4Fe-4S single cluster domain
+    "PF13370.10",  # 4Fe-4S single cluster domain of Ferredoxin I
+    "PF13459.10",  # 4Fe-4S single cluster domain
+    "PF13484.10",  # 4Fe-4S double cluster binding domain
+    "PF13534.10",  # 4Fe-4S dicluster domain
+    "PF13746.10",  # 4Fe-4S dicluster domain
+    "PF14691.10",  # Dihydroprymidine dehydrogenase domain II, 4Fe-4S cluster
+    "PF14697.10",  # 4Fe-4S dicluster domain
     "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
+    "PF17179.8",  # 4Fe-4S dicluster domain
+    "PF18009.5",  # 4Fe-4S iron-sulfur cluster binding domain
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe FrhD / MvhD subunit (group 3 NiFe)
 NIFE_FRHB_CODES = [
     "COG1035",  # Coenzyme F420-reducing hydrogenase, beta subunit (FrhB) (PDB:3ZFS)
     "COG1908",  # Coenzyme F420-reducing hydrogenase, delta subunit (MvhD) (PDB:5ODC)
+    "COG3894",  # Uncharacterized 2Fe-2S and 4Fe-4S clusters-containing protein, contains DUF4445 domain (PDB:4C1N)
+    "K00205",  # 4Fe-4S ferredoxin
     "K00441",  # coenzyme F420 hydrogenase subunit beta [EC:1.12.98.1]
+    "K11260",  # 4Fe-4S ferredoxin
     "K17994",  # sulfhydrogenase subunit delta [EC:1.12.1.3 1.12.1.5]
+    "PF00037.31",  # 4Fe-4S binding domain
+    "PF00142.22",  # 4Fe-4S iron sulfur cluster binding proteins, NifH/frxC family
+    "PF01077.26",  # Nitrite and sulphite reductase 4Fe-4S domain
     "PF02662.20",  # Methyl-viologen-reducing hydrogenase, delta subunit
+    "PF05187.17",  # Electron transfer flavoprotein-ubiquinone oxidoreductase, 4Fe-4S
+    "PF06902.15",  # Divergent 4Fe-4S mono-cluster
+    "PF12797.11",  # 4Fe-4S binding domain
+    "PF12798.11",  # 4Fe-4S binding domain
+    "PF12800.11",  # 4Fe-4S binding domain
+    "PF12801.11",  # 4Fe-4S binding domain
+    "PF12837.11",  # 4Fe-4S binding domain
+    "PF12838.11",  # 4Fe-4S dicluster domain
+    "PF13183.10",  # 4Fe-4S dicluster domain
+    "PF13187.10",  # 4Fe-4S dicluster domain
+    "PF13237.10",  # 4Fe-4S dicluster domain
+    "PF13247.10",  # 4Fe-4S dicluster domain
+    "PF13353.10",  # 4Fe-4S single cluster domain
+    "PF13370.10",  # 4Fe-4S single cluster domain of Ferredoxin I
+    "PF13459.10",  # 4Fe-4S single cluster domain
+    "PF13484.10",  # 4Fe-4S double cluster binding domain
+    "PF13534.10",  # 4Fe-4S dicluster domain
+    "PF13746.10",  # 4Fe-4S dicluster domain
+    "PF14691.10",  # Dihydroprymidine dehydrogenase domain II, 4Fe-4S cluster
+    "PF14697.10",  # 4Fe-4S dicluster domain
+    "PF17179.8",  # 4Fe-4S dicluster domain
+    "PF18009.5",  # 4Fe-4S iron-sulfur cluster binding domain
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
@@ -165,27 +220,45 @@ NIFE_GROUP3_PPI_CODES = [
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 # TODO: add NADH ubiquinone oxidoreductase subunits
 NIFE_GROUP4_PPI_CODES = [
+    "COG0025",  # NhaP-type Na+/H+ or K+/H+ antiporter (NhaP) (PDB:4CZB)
+    "COG0038",  # H+/Cl- antiporter ClcA (ClcA) (PDB:1KPK)
+    "COG0387",  # Cation (Ca2+/Na+/K+)/H+ antiporter ChaA (ChaA) (PDB:4KJS) (PUBMED:18801996)
+    "COG0490",  # K+/H+ antiporter KhtSTU, c-di-AMP-binding regulatory subunit KhtT, contains RCK_C (TrkA_C) domain (KhtT) (PDB:4J90) (PUBMED:24330391;31061098)
+    "COG0530",  # Ca2+/Na+ antiporter (ECM27) (PDB:3V5S)
+    "COG0650",  # Formate hydrogenlyase subunit HyfC (HyfC) (PDB:6CFW)
+    "COG0651",  # Formate hydrogenlyase subunit 3/Multisubunit Na+/H+ antiporter, MnhD subunit (HyfB) (PDB:6CFW)
     "COG0713",  # NADH:ubiquinone oxidoreductase subunit 11 or 4L (chain K) (NuoK) (PDB:4HE8)
     "COG0838",  # NADH:ubiquinone oxidoreductase subunit 3 (chain A) (NuoA) (PDB:3RKO)
     "COG0839",  # NADH:ubiquinone oxidoreductase subunit 6 (chain J) (NuoJ) (PDB:4HE8)
     "COG0852",  # NADH:ubiquinone oxidoreductase 27 kD subunit (chain C) (NuoC)
     "COG1005",  # NADH:ubiquinone oxidoreductase subunit 1 (chain H) (NuoH) (PDB:6HUM)
+    "COG1006",  # Multisubunit Na+/H+ antiporter, MnhC subunit (MnhC) (PDB:6CFW)
     "COG1007",  # NADH:ubiquinone oxidoreductase subunit 2 (chain N) (NuoN) (PDB:4HE8)
     "COG1008",  # NADH:ubiquinone oxidoreductase subunit 4 (chain M) (NuoM) (PDB:6HUM)
     "COG1009",  # Membrane H+-translocase/NADH:ubiquinone oxidoreductase subunit 5 (chain L)/Multisubunit Na+/H+ antiporter, MnhA subunit (NuoL) (PDB:3RKO)
     "COG1034",  # NADH dehydrogenase/NADH:ubiquinone oxidoreductase 75 kD subunit (chain G) (NuoG) (PDB:1C4A)
-    "COG1034",  # NADH dehydrogenase/NADH:ubiquinone oxidoreductase 75 kD subunit (chain G) (NuoG) (PDB:1C4A)
+    "COG1055",  # Na+/H+ antiporter NhaD or related arsenite permease (ArsB)
     "COG1143",  # Formate hydrogenlyase subunit 6/NADH:ubiquinone oxidoreductase 23 kD subunit (chain I) (NuoI) (PDB:1B0P)
     "COG1252",  # NADH dehydrogenase, FAD-containing subunit (Ndh) (PDB:5NA4)
+    "COG1320",  # Multisubunit Na+/H+ antiporter, MnhG subunit (MnhG) (PDB:6CFW)
     "COG1347",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrD (NqrD) (PDB:4P6V)
+    "COG1563",  # Uncharacterized MnhB-related membrane protein (PDB:6CFW)
     "COG1726",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrA (NqrA) (PDB:4P6V)
+    "COG1757",  # Na+/H+ antiporter NhaC/MleN (NhaC)
     "COG1805",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrB (NqrB) (PDB:4P6V)
+    "COG1863",  # Multisubunit Na+/H+ antiporter, MnhE subunit (MnhE) (PDB:6CFW)
     "COG1894",  # NADH:ubiquinone oxidoreductase, NADH-binding 51 kD subunit (chain F) (NuoF) (PDB:2FUG)
     "COG1905",  # NADH:ubiquinone oxidoreductase 24 kD subunit (chain E) (NuoE) (PDB:5XF9)
+    "COG2111",  # Multisubunit Na+/H+ antiporter, MnhB subunit (MnhB)
+    "COG2119",  # Putative Ca2+/H+ antiporter, TMEM165/GDT1 family (Gdt1) (PUBMED:23569283)
     "COG2209",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrE (NqrE) (PDB:4P6V)
+    "COG2212",  # Multisubunit Na+/H+ antiporter, MnhF subunit (MnhF) (PDB:6CFW)
     "COG2869",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrC (NqrC) (PDB:4P6V)
     "COG2871",  # Na+-transporting NADH:ubiquinone oxidoreductase, subunit NqrF (NqrF) (PDB:4P6V)
+    "COG3004",  # Na+/H+ antiporter NhaA (NhaA) (PDB:1ZCD) (PUBMED:25746996)
+    "COG3067",  # Na+/H+ antiporter NhaB (NhaB)
     "COG3262",  # Ni,Fe-hydrogenase III component G (HycE1)
+    "COG3263",  # NhaP-type Na+/H+ and K+/H+ antiporter with C-terminal TrkAC and CorC domains (NhaP2)
     "COG3761",  # NADH:ubiquinone oxidoreductase NDUFA12 subunit (Leigh syndrome) (NDUFA12)
     "COG4035",  # Energy-converting hydrogenase Eha subunit L (EhaL) (PUBMED:19495416)
     "COG4036",  # Energy-converting hydrogenase Eha subunit G (EhaG) (PUBMED:19495416)
@@ -198,6 +271,7 @@ NIFE_GROUP4_PPI_CODES = [
     "COG4078",  # Energy-converting hydrogenase Eha subunit H (EhaH) (PUBMED:19495416)
     "COG4084",  # Energy-converting hydrogenase A subunit M (EhaM) (PDB:1NXH)
     "COG4237",  # Hydrogenase-4 membrane subunit HyfE (HyfE)
+    "COG4651",  # Predicted Kef-type K+ transport protein, K+/H+ antiporter domain (RosB)
     "K00330",  # NADH-quinone oxidoreductase subunit A [EC:7.1.1.2]
     "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
     "K00332",  # NADH-quinone oxidoreductase subunit C [EC:7.1.1.2]
@@ -217,6 +291,11 @@ NIFE_GROUP4_PPI_CODES = [
     "K00349",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit D [EC:7.2.1.1]
     "K00350",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit E [EC:7.2.1.1]
     "K00351",  # Na+-transporting NADH:ubiquinone oxidoreductase subunit F [EC:7.2.1.1]
+    "K03313",  # Na+:H+ antiporter, NhaA family
+    "K03314",  # Na+:H+ antiporter, NhaB family
+    "K03315",  # Na+:H+ antiporter, NhaC family
+    "K03316",  # monovalent cation:H+ antiporter, CPA1 family
+    "K03455",  # monovalent cation:H+ antiporter-2, CPA2 family
     "K03934",  # NADH dehydrogenase (ubiquinone) Fe-S protein 1 [EC:7.1.1.2]
     "K03935",  # NADH dehydrogenase (ubiquinone) Fe-S protein 2 [EC:7.1.1.2]
     "K03936",  # NADH dehydrogenase (ubiquinone) Fe-S protein 3 [EC:7.1.1.2]
@@ -232,8 +311,23 @@ NIFE_GROUP4_PPI_CODES = [
     "K03952",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 8
     "K03953",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 9
     "K03955",  # NADH dehydrogenase (ubiquinone) 1 alpha/beta subcomplex 1, acyl-carrier protein
+    "K05559",  # multicomponent K+:H+ antiporter subunit A
+    "K05560",  # multicomponent K+:H+ antiporter subunit C
+    "K05561",  # multicomponent K+:H+ antiporter subunit D
+    "K05562",  # multicomponent K+:H+ antiporter subunit E
+    "K05563",  # multicomponent K+:H+ antiporter subunit F
+    "K05564",  # multicomponent K+:H+ antiporter subunit G
+    "K05565",  # multicomponent Na+:H+ antiporter subunit A
+    "K05566",  # multicomponent Na+:H+ antiporter subunit B
+    "K05567",  # multicomponent Na+:H+ antiporter subunit C
+    "K05568",  # multicomponent Na+:H+ antiporter subunit D
+    "K05569",  # multicomponent Na+:H+ antiporter subunit E
+    "K05570",  # multicomponent Na+:H+ antiporter subunit F
+    "K05571",  # multicomponent Na+:H+ antiporter subunit G
     "K06862",  # energy-converting hydrogenase B subunit Q
-    "K06862",  # energy-converting hydrogenase B subunit Q
+    "K07242",  # putative multicomponent Na+:H+ antiporter subunit B
+    "K07300",  # Ca2+:H+ antiporter
+    "K07301",  # cation:H+ antiporter
     "K09008",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 3
     "K11352",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 12
     "K11353",  # NADH dehydrogenase (ubiquinone) 1 alpha subcomplex subunit 13
@@ -285,6 +379,12 @@ NIFE_GROUP4_PPI_CODES = [
     "K14123",  # energy-converting hydrogenase B subunit N
     "K14124",  # energy-converting hydrogenase B subunit O
     "K14125",  # energy-converting hydrogenase B subunit P
+    "K15827",  # formate hydrogenlyase subunit 2
+    "K15828",  # formate hydrogenlyase subunit 3
+    "K15829",  # formate hydrogenlyase subunit 4
+    "K15830",  # formate hydrogenlyase subunit 5
+    "K15831",  # formate hydrogenlyase subunit 6
+    "K15832",  # formate hydrogenlyase subunit 7
     "K15863",  # NADH-quinone oxidoreductase subunit L/M [EC:7.1.1.2]
     "K18017",  # membrane-bound hydrogenase subunit beta [EC:1.12.7.2]
     "K18159",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 1
@@ -292,12 +392,21 @@ NIFE_GROUP4_PPI_CODES = [
     "K18163",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 6
     "K18164",  # NADH dehydrogenase [ubiquinone] 1 alpha subcomplex assembly factor 7
     "K22015",  # formate dehydrogenase (hydrogenase) [EC:1.17.98.4 1.17.98.-]
+    "K23541",  # Ca2+/H+ antiporter, TMEM165/GDT1 family
     "PF00146.25",  # NADH dehydrogenase
-    "PF00146.25",  # NADH dehydrogenase
+    "PF00361.24",  # Proton-conducting membrane transporter
+    "PF00662.24",  # NADH-Ubiquinone oxidoreductase (complex I), chain 5 N-terminus
     "PF01512.21",  # Respiratory-chain NADH dehydrogenase 51 Kd subunit
+    "PF01899.20",  # Na+/H+ ion antiporter subunit
+    "PF03334.18",  # Na+/H+ antiporter subunit
+    "PF03553.18",  # Na+/H+ antiporter family
+    "PF04039.17",  # Domain related to MnhB subunit of Na+/H+ antiporter
     "PF04800.16",  # NADH dehydrogenase ubiquinone Fe-S protein 4
     "PF06235.15",  # NADH dehydrogenase subunit 4L (NAD4L)
+    "PF06450.16",  # Bacterial Na+/H+ antiporter B (NhaB)
     "PF06455.15",  # NADH dehydrogenase subunit 5 C-terminus
+    "PF06965.16",  # Na+/H+ antiporter 1
+    "PF07399.15",  # Putative Na+/H+ antiporter
     "PF09877.13",  # Energy-converting hydrogenase subunit EhaL
     "PF10125.13",  # NADH dehydrogenase I, subunit N related protein
     "PF10200.13",  # NADH:ubiquinone oxidoreductase, NDUFS5-15kDa
@@ -305,21 +414,13 @@ NIFE_GROUP4_PPI_CODES = [
     "PF10716.13",  # NADH dehydrogenase transmembrane subunit
     "PF11497.12",  # NADH-quinone oxidoreductase chain 15
     "PF11909.12",  # NADH-quinone oxidoreductase cyanobacterial subunit N
+    "PF13244.10",  # MBH, subunit D
+    "PF13726.10",  # Na+-H+ antiporter family
     "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
-    "PF17367.6",  # NiFe-hydrogenase-type-3 Eha complex subunit A
-    "COG0650",  # Formate hydrogenlyase subunit HyfC (HyfC) (PDB:6CFW)
-    "COG0650",  # Formate hydrogenlyase subunit HyfC (HyfC) (PDB:6CFW)
-    "COG0651",  # Formate hydrogenlyase subunit 3/Multisubunit Na+/H+ antiporter, MnhD subunit (HyfB) (PDB:6CFW)
-    "COG1143",  # Formate hydrogenlyase subunit 6/NADH:ubiquinone oxidoreductase 23 kD subunit (chain I) (NuoI) (PDB:1B0P)
-    "K15827",  # formate hydrogenlyase subunit 2
-    "K15828",  # formate hydrogenlyase subunit 3
-    "K15829",  # formate hydrogenlyase subunit 4
-    "K15830",  # formate hydrogenlyase subunit 5
-    "K15831",  # formate hydrogenlyase subunit 6
-    "K15832",  # formate hydrogenlyase subunit 7
-    "PF00361.24",  # Proton-conducting membrane transporter
-    "PF00662.24",  # NADH-Ubiquinone oxidoreductase (complex I), chain 5 N-terminus
-    "COG1009",  # Membrane H+-translocase/NADH:ubiquinone oxidoreductase subunit 5 (chain L)/Multisubunit Na+/H+ antiporter, MnhA subunit (NuoL) (PDB:3RKO)
+    "PF20501.2",  # MBH, subunit E
+    "PF00420.28",  # NADH-ubiquinone/plastoquinone oxidoreductase chain 4L
+    "PF00499.24",  # NADH-ubiquinone/plastoquinone oxidoreductase chain 6
+    "PF00507.23",  # NADH-ubiquinone/plastoquinone oxidoreductase, chain 3
 ]
 
 # WARN: hardcoded HMM annotation codes for all possible NiFe PPI partners
@@ -343,8 +444,20 @@ NIFE_MATURATION_CODES = [
     "COG0409",  # Hydrogenase maturation factor HypD (HypD) (PDB:2Z1D)
     "COG0680",  # Ni,Fe-hydrogenase maturation factor (HyaD) (PDB:1CFZ) (PUBMED:15294295)
     "COG0694",  # Fe-S cluster biogenesis protein NfuA, 4Fe-4S-binding domain (NifU) (PDB:2Z51)
+    "COG1773",  # Flavorubredoxin (NorV) (PDB:4D02)
+    "COG1831",  # Predicted metal-dependent hydrolase, urease superfamily
     "COG1973",  # Hydrogenase maturation factor HypE (HypE2)
     "COG2370",  # Hydrogenase/urease accessory protein HupE (HupE)
+    "K01427",  # urease [EC:3.5.1.5]
+    "K01428",  # urease subunit alpha [EC:3.5.1.5]
+    "K01429",  # urease subunit beta [EC:3.5.1.5]
+    "K01430",  # urease subunit gamma [EC:3.5.1.5]
+    "K01512",  # acylphosphatase [EC:3.6.1.7]
+    "K03187",  # urease accessory protein
+    "K03188",  # urease accessory protein
+    "K03189",  # urease accessory protein
+    "K03190",  # urease accessory protein
+    "K03192",  # urease accessory protein
     "K03605",  # hydrogenase maturation protease [EC:3.4.23.-]
     "K03618",  # hydrogenase-1 operon protein HyaF
     "K03619",  # hydrogenase-1 operon protein HyaE
@@ -358,21 +471,30 @@ NIFE_MATURATION_CODES = [
     "K07388",  # hydrogenase expression/formation protein
     "K08315",  # hydrogenase 3 maturation protease [EC:3.4.23.51]
     "K12146",  # hydrogenase-4 transcriptional activator
-    "K19640",  # putative two-component system protein, hydrogenase maturation factor HypX/HoxX
-    "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA
-    "PF01455.22",  # HupF/HypC family
-    "PF01750.22",  # Hydrogenase maturation protease
-    "PF01924.20",  # Hydrogenase formation hypA family
-    "PF02492.23",  # CobW/HypB/UreG, nucleotide-binding domain
-    "PF04809.17",  # HupH hydrogenase expression protein, C-terminal conserved region
-    "PF04809.17",  # HupH hydrogenase expression protein, C-terminal conserved region
-    "PF07449.15",  # Hydrogenase-1 expression protein HyaE
-    "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
-    "PF21699.1",  # Iron-only hydrogenase system regulator, putative
+    "K14048",  # urease subunit gamma/beta [EC:3.5.1.5]
     "K15833",  # formate hydrogenlyase regulatory protein HycA
     "K15834",  # formate hydrogenlyase maturation protein HycH
     "K15836",  # formate hydrogenlyase transcriptional activator
+    "K19640",  # putative two-component system protein, hydrogenase maturation factor HypX/HoxX
+    "PF00301.24",  # Rubredoxin
+    "PF01155.23",  # Hydrogenase/urease nickel incorporation, metallochaperone, hypA
+    "PF01455.22",  # HupF/HypC family
+    "PF01750.22",  # Hydrogenase maturation protease
+    "PF01774.21",  # UreD urease accessory protein
+    "PF01924.20",  # Hydrogenase formation hypA family
+    "PF02492.23",  # CobW/HypB/UreG, nucleotide-binding domain
+    "PF02814.19",  # UreE urease accessory protein, N-terminal domain
+    "PF04809.17",  # HupH hydrogenase expression protein, C-terminal conserved region
+    "PF04955.16",  # HupE / UreJ protein
+    "PF05194.16",  # UreE urease accessory protein, C-terminal domain
+    "PF07449.15",  # Hydrogenase-1 expression protein HyaE
     "PF07450.15",  # Formate hydrogenlyase maturation protein HycH
+    "PF07503.16",  # HypF finger
+    "PF11939.12",  # [NiFe]-hydrogenase assembly, chaperone, HybE
+    "PF13795.10",  # HupE / UreJ protein
+    "PF17773.5",  # UPF0176 acylphosphatase like domain
+    "PF17788.5",  # HypF Kae1-like domain
+    "PF21699.1",  # Iron-only hydrogenase system regulator, putative
 ]
 
 IRON_HYDROGENASE_CODES = [
@@ -390,6 +512,8 @@ IRON_HYDROGENASE_CODES = [
     "PF02256.21",  # Iron hydrogenase small subunit
     "PF02906.18",  # Iron only hydrogenase large subunit, C-terminal domain
 ]
+
+IGNORE_CODES = []
 
 
 def parse_arguments() -> argparse.Namespace:
