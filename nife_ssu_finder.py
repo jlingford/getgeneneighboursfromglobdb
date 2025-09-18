@@ -712,13 +712,27 @@ def plot_gene_neighbourhood(
             if "ID" in feature.qualifiers:
                 gene_id = feature.qualifiers["ID"][0]
                 gene_id = gene_id.split("___")[1]
+                if "product" in feature.qualifiers:
+                    gene_desc = feature.qualifiers["product"][0]
+                    if "maturation" in gene_desc:
+                        return "#f9e2af"
+                    if "chaperone" in gene_desc:
+                        return "#f9e2af"
                 if "Name" in feature.qualifiers:
                     gene_anno = feature.qualifiers["Name"][0]
                     # colour genes that match annotations of familiar neighbours blue
+                    if gene_anno in IRON_HYDROGENASE_CODES:
+                        return "#f5a97f"
                     if gene_anno in NIFE_GROUP1_PPI_CODES:
                         return "#cba6f7"
+                    if gene_anno in NIFE_GROUP2_PPI_CODES:
+                        return "#cba6f7"
+                    if gene_anno in NIFE_GROUP3_PPI_CODES:
+                        return "#cba6f7"
+                    if gene_anno in NIFE_GROUP4_PPI_CODES:
+                        return "#cba6f7"
                     if gene_anno in NIFE_FRHB_CODES:
-                        return "#b4befe"
+                        return "#cba6f7"
                     if gene_anno in NIFE_SSU_CODES:
                         return "#89b4fa"
                     if gene_anno in NIFE_MATURATION_CODES:
@@ -726,12 +740,6 @@ def plot_gene_neighbourhood(
                     # colour expected target with correct annotation as green
                     if gene_anno in NIFE_LSU_CODES:
                         return "#a6e3a1"
-                if "product" in feature.qualifiers:
-                    gene_desc = feature.qualifiers["product"][0]
-                    if "maturation" in gene_desc:
-                        return "#f9e2af"
-                    if "chaperone" in gene_desc:
-                        return "#f9e2af"
                 # colour target gene red if it doesn't match anything else
                 if target_gene_id == gene_id:
                     return "#f38ba8"
@@ -757,6 +765,17 @@ def plot_gene_neighbourhood(
     fig, ax = plt.subplots()
     ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
     ax.figure.tight_layout()
+
+    # add genome name to figure
+    plt.figtext(
+        0.02,
+        -0.05,
+        f"Genome: {genome_name}",
+        ha="left",
+        va="top",
+        fontsize=12,
+        style="italic",
+    )
 
     # save figure
     outpath = Path(output_dir) / gene_name / f"{gene_name}___plot.{format}"
