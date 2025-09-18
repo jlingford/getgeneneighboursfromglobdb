@@ -569,7 +569,6 @@ def extract_gene_neighbourhood(
 def extract_nife_ssu(
     args: argparse.Namespace,
     target_name: str,
-    anno_file: Path,
     gff_input: pl.DataFrame,
     fasta_file: Path,
 ) -> None:
@@ -582,12 +581,12 @@ def extract_nife_ssu(
     upstream_window = args.upstream_window  # Size of window upstream/downstream
     downstream_window = args.downstream_window  # Size of window upstream/downstream
 
-    goi = gff.filter(pl.col("attributes").str.contains(f"ID={lsu_id}"))
+    goi = gff.filter(pl.col("attributes").str.contains(rf"ID={lsu_id}(?:;|$)"))
 
     scaffold = goi.item(0, "seqid")
-    # strand = goi.item(0, "strand")
     start = goi.item(0, "start")
     end = goi.item(0, "end")
+    # strand = goi.item(0, "strand")
 
     window_start = max(start - upstream_window, 0)
     window_end = end + downstream_window
@@ -597,6 +596,8 @@ def extract_nife_ssu(
         (pl.col("seqid") == scaffold)
         & (pl.col("start") <= window_end)
         & (pl.col("end") >= window_start)
+        & (pl.col("type") == "CDS")
+        & (~pl.col("attributes").str.contains(rf"ID={lsu_id}(?:;|$)"))
         # & (pl.col("strand") == strand)
     )
 
@@ -698,8 +699,8 @@ def plot_gene_neighbourhood(
     dpi = args.plot_dpi
     format = args.plot_format
     target_gene_id = gene_name.split("___")[1]
+    genome_name = gene_name.split("___")[0]
     gff_input = str(gff_input_file)
-    # gff_input = gff_input_file
     window_start = args.upstream_window
     window_end = args.downstream_window
 
