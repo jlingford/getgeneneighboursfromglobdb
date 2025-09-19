@@ -280,6 +280,7 @@ def extract_gene_neighbourhood(
     gff_file: Path,
     anno_file: Path,
     fasta_file: Path,
+    taxonomy_df: pl.DataFrame,
 ) -> None:
     """Finds the genes upstream and downstream of gene of interest in .gff file and returns/outputs new subset of the .gff file"""
     # params
@@ -446,6 +447,7 @@ def extract_gene_neighbourhood(
         )
     )
 
+    # TODO: figure out what to do with this...
     # get a gene list of just SSU candidates
     gff_subset_ssus = rebuilt_gff_full.filter(
         pl.col("attributes").str.contains_any(NIFE_SSU_CODES)
@@ -501,25 +503,25 @@ def extract_gene_neighbourhood(
         gff_outpath = (
             Path(output_dir)
             / gene_name
-            / f"{gene_name}___gene_neighbours_KOfam_annotations.gff"
+            / f"{gene_name}-geneneighbours_with_KOfam_annotations.gff"
         )
     elif args.pfam_only:
         gff_outpath = (
             Path(output_dir)
             / gene_name
-            / f"{gene_name}___gene_neighbours_Pfam_annotations.gff"
+            / f"{gene_name}-geneneighbours_with_Pfam_annotations.gff"
         )
     elif args.cogfun_only:
         gff_outpath = (
             Path(output_dir)
             / gene_name
-            / f"{gene_name}___gene_neighbours_COGFUN_annotations.gff"
+            / f"{gene_name}-geneneighbours_with_COGFUN_annotations.gff"
         )
     elif args.retain_full_gff:
         gff_outpath = (
             Path(output_dir)
             / gene_name
-            / f"{gene_name}-gene_neighbours_all_combined_annotations.gff"
+            / f"{gene_name}-geneneighbours_with_all_annotations.gff"
         )
         gff_dataframe_to_write = (
             rebuilt_gff_full  # keep all non-unique rows in gff file
@@ -528,7 +530,7 @@ def extract_gene_neighbourhood(
         gff_outpath = (
             Path(output_dir)
             / gene_name
-            / f"{gene_name}___gene_neighbours_combined_annotations.gff"
+            / f"{gene_name}-geneneighbours_with_best_annotations.gff"
         )
 
     gff_outpath.parent.mkdir(exist_ok=True, parents=True)
@@ -548,7 +550,9 @@ def extract_gene_neighbourhood(
     # plot gene neighbourhood figure
     gff_input_file = gff_outpath
     if args.no_plot is not True:
-        plot_gene_neighbourhood(args, gene_name, gff_input_file, goi_start, goi_end)
+        plot_gene_neighbourhood(
+            args, gene_name, gff_input_file, goi_start, goi_end, taxonomy_df
+        )
 
     # extract fasta sequences
     fasta_file_subset = fasta_neighbourhood_extract(
@@ -692,6 +696,7 @@ def plot_gene_neighbourhood(
     gff_input_file: Path,
     goi_start: str,
     goi_end: str,
+    taxonomy_df: pl.DataFrame,
 ) -> None:
     """Plot the genetic neighbourhood around gene of interest using dna_features_viewer"""
     # params
@@ -708,10 +713,8 @@ def plot_gene_neighbourhood(
     # TODO: update this with more colours/options
     class CustomTranslator(BiopythonTranslator):
         def compute_feature_color(self, feature):
-            # Color the target gene green, annotation matches blue, and all others grey
             if "ID" in feature.qualifiers:
-                gene_id = feature.qualifiers["ID"][0]
-                gene_id = gene_id.split("___")[1]
+                gene_id = feature.qualifiers["ID"][0].split("___")[1]
                 if "product" in feature.qualifiers:
                     gene_desc = feature.qualifiers["product"][0]
                     if "maturation" in gene_desc:
@@ -720,7 +723,7 @@ def plot_gene_neighbourhood(
                         return "#f9e2af"
                 if "Name" in feature.qualifiers:
                     gene_anno = feature.qualifiers["Name"][0]
-                    # colour genes that match annotations of familiar neighbours blue
+                    # colour genes that match annotations of familiar neighbours
                     if gene_anno in IRON_HYDROGENASE_CODES:
                         return "#f5a97f"
                     if gene_anno in NIFE_GROUP1_PPI_CODES:
@@ -761,6 +764,13 @@ def plot_gene_neighbourhood(
     # crop plot to window
     record = record.crop((window_start, window_end))
 
+    # get taxonomy/species name of genome
+    species = (
+        taxonomy_df.filter(pl.col("genome_id") == f"{genome_name}")
+        .select("species")
+        .item()
+    )
+
     # plot figure
     fig, ax = plt.subplots()
     ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
@@ -770,17 +780,17 @@ def plot_gene_neighbourhood(
     plt.figtext(
         0.02,
         -0.05,
-        f"Genome: {genome_name}",
+        rf"{species} ({genome_name})",
         ha="left",
         va="top",
         fontsize=12,
-        style="italic",
+        style="normal",
     )
 
     # save figure
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___plot.{format}"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}-plot.{format}"
     outpath.parent.mkdir(exist_ok=True, parents=True)
-    ax.figure.savefig(outpath, dpi=dpi, format=format)
+    ax.figure.savefig(outpath, dpi=dpi, format=format, bbox_inches="tight")
     # close figure to avoid memory issues
     plt.close("all")
 
@@ -959,6 +969,36 @@ def pairwise_fasta_generation(
             SeqIO.write([rec1, rec2], outpath, "fasta")
 
 
+def taxonomy_dataframe(taxonomy_file: Path) -> pl.DataFrame:
+    """Read GlobDB taxonomy file and return dataframe of taxa"""
+    # read in tsv file
+    df = pl.read_csv(
+        taxonomy_file,
+        separator="\t",
+        has_header=False,
+        new_columns=["genome_id", "taxonomy_string"],
+    )
+    # remove prefix from taxa names, split taxonomy_string into new columns on ";", and rename columns to taxa
+    df = (
+        df.with_columns(
+            pl.col("taxonomy_string")
+            .str.replace_all(r"[a-z]__", "")
+            .str.split_exact(by=";", n=6)
+            .alias("taxa")
+        )
+        .unnest("taxa")
+        .rename(
+            {
+                f"field_{i}": name
+                for i, name in enumerate(
+                    ["domain", "phylum", "class", "order", "family", "genus", "species"]
+                )
+            }
+        )
+    )
+    return df
+
+
 def annotation_extract(
     args: argparse.Namespace,
     gene_name: str,
@@ -1018,14 +1058,14 @@ def find_gff_file_from_index(
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError(f"No file found for {target_name}.")
+        raise FileNotFoundError(f"No gff file found for {target_name}.")
     return matches[0]
 
 
 def find_annotation_file_from_index(
     file_index: dict[str, list[Path]], target_name: str
 ) -> Path:
-    """Use prebuilt index to find annotation file of interest"""
+    """use prebuilt index to find annotation file of interest"""
     matches = [
         path
         for filename, paths in file_index.items()
@@ -1034,14 +1074,14 @@ def find_annotation_file_from_index(
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError(f"No file found for {target_name}.")
+        raise FileNotFoundError(f"No annotations file found for {target_name}.")
     return matches[0]
 
 
 def find_fasta_file_from_index(
     file_index: dict[str, list[Path]], target_name: str
 ) -> Path:
-    """Use prebuilt index to find fasta file of interest"""
+    """use prebuilt index to find fasta file of interest"""
     matches = [
         path
         for filename, paths in file_index.items()
@@ -1049,13 +1089,28 @@ def find_fasta_file_from_index(
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError(f"No file found for {target_name}.")
+        raise FileNotFoundError(f"no file found for {target_name}.")
+    return matches[0]
+
+
+def find_taxonomy_file_from_index(file_index: dict[str, list[Path]]) -> Path:
+    """use prebuilt index to find GlobDB taxonomy file"""
+    matches = [
+        path
+        for filename, paths in file_index.items()
+        if filename == r"globdb_r226_taxonomy.tsv"
+        or filename == r"globdb_r226_taxonomy.tsv.gz"
+        for path in paths
+    ]
+    if not matches:
+        raise FileNotFoundError("ERROR: No taxonomy file found")
     return matches[0]
 
 
 def process_target_genes(args: argparse.Namespace) -> None:
-    """Handles processing input depending on what arguments were parsed"""
-    # Read or write index file of GlobDB
+    """handles processing input depending on what arguments were parsed"""
+    # read or write index file of globdb
+    file_index = None
     if args.index_path:
         pickle_file = args.index_path
         if pickle_file.is_file():
@@ -1063,48 +1118,55 @@ def process_target_genes(args: argparse.Namespace) -> None:
             with open(pickle_file, "rb") as f:
                 file_index = pickle.load(f)
     else:
-        print("Writing index from GlobDB dir provided. May take a while...")
+        print("writing index from globdb dir provided. may take a while...")
         new_pickle_file = "./globdb_index.pkl"
         file_index = build_file_index(args.data_dir)
         with open(new_pickle_file, "wb") as f:
             pickle.dump(file_index, f)
-            print(f"Index written to {new_pickle_file} in current directory")
+            print(f"index written to {new_pickle_file} in current directory")
 
-    # Process target genes from target list
+    # TODO:
+    # find and process taxonomy.tsv file once
+    taxonomy_file = find_taxonomy_file_from_index(file_index)
+    taxonomy_df = taxonomy_dataframe(taxonomy_file)
+
+    # process target genes from target list
     if args.gene_list:
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
-                print(f"Searching {gene_name}")
+                print(f"searching {gene_name}")
                 target_name = gene_name.split("___")[0]
                 try:
                     gff_file = find_gff_file_from_index(file_index, target_name)
                 except FileNotFoundError as e:
-                    print(f"WARNING: {e}. Skipping.")
+                    print(f"warning: {e}. skipping.")
                     continue
                 anno_file = find_annotation_file_from_index(file_index, target_name)
                 fasta_file = find_fasta_file_from_index(file_index, target_name)
                 extract_gene_neighbourhood(
-                    args, gene_name, gff_file, anno_file, fasta_file
+                    args, gene_name, gff_file, anno_file, fasta_file, taxonomy_df
                 )
 
-    # Or process single target
+    # or process single target
     if args.gene_name:
         gene_name = args.gene_name.rstrip()
-        print(f"Searching {gene_name}")
+        print(f"searching {gene_name}")
         target_name = gene_name.split("___")[0]
         try:
             gff_file = find_gff_file_from_index(file_index, target_name)
         except FileNotFoundError as e:
-            print(f"WARNING: {e} Skipping.")
+            print(f"warning: {e} skipping.")
             return
         anno_file = find_annotation_file_from_index(file_index, target_name)
         fasta_file = find_fasta_file_from_index(file_index, target_name)
-        extract_gene_neighbourhood(args, gene_name, gff_file, anno_file, fasta_file)
+        extract_gene_neighbourhood(
+            args, gene_name, gff_file, anno_file, fasta_file, taxonomy_df
+        )
 
 
 def main():
-    """Handles broad control flow of all functions"""
+    """handles broad control flow of all functions"""
     args = parse_arguments()
     process_target_genes(args)
 
