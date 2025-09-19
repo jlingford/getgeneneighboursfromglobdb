@@ -81,7 +81,7 @@ def parse_arguments() -> argparse.Namespace:
         dest="gene_list",
         type=Path,
         metavar="FILE",
-        help="Path to list of genes of interest (Either -l or -n is required).",
+        help="Path to list of genes of interest, one per line (Either -l or -n is required).",
     )
 
     input_genes_args.add_argument(
@@ -121,6 +121,16 @@ def parse_arguments() -> argparse.Namespace:
         required=False,
         metavar="DIR",
         help="Path to output dir. [Default: current dir]",
+    )
+
+    parser.add_argument(
+        "-h",
+        "--add_hyddb",
+        dest="add_hyddb",
+        type=Path,
+        required=False,
+        metavar="FILE.tsv",
+        help="Path to .tsv of gene ID's and respective HydDB classification",
     )
 
     parser.add_argument(
@@ -771,6 +781,20 @@ def plot_gene_neighbourhood(
         .item()
     )
 
+    # get hydrogenase classification
+    if args.add_hyddb:
+        hyddb_df = pl.read_csv(
+            args.add_hyddb,
+            separator="\t",
+            has_header=False,
+            new_columns=["gene_id", "classification"],
+        )
+        hydclass = (
+            hyddb_df.filter(pl.col("gene_id") == f"{gene_name}")
+            .select("classification")
+            .item()
+        )
+
     # plot figure
     fig, ax = plt.subplots()
     ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
@@ -780,7 +804,7 @@ def plot_gene_neighbourhood(
     plt.figtext(
         0.02,
         -0.05,
-        rf"{species} ({genome_name})",
+        rf"{species} ({genome_name}); Gene {target_gene_id}: [NiFe] group {hydclass}",
         ha="left",
         va="top",
         fontsize=12,
