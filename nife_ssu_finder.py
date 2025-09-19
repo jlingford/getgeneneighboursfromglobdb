@@ -124,7 +124,6 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-h",
         "--add_hyddb",
         dest="add_hyddb",
         type=Path,
@@ -743,7 +742,7 @@ def plot_gene_neighbourhood(
                     if gene_anno in NIFE_GROUP3_PPI_CODES:
                         return "#94e2d5"
                     if gene_anno in NIFE_GROUP4_PPI_CODES:
-                        return "#b4befe"
+                        return "#7287fd"
                     if gene_anno in NIFE_FRHB_CODES:
                         return "#94e2d5"
                     if gene_anno in NIFE_SSU_CODES:
@@ -781,6 +780,8 @@ def plot_gene_neighbourhood(
         .item()
     )
 
+    figure_text = f"Species: {species}; Genome: {genome_name}; Gene: {target_gene_id}"
+
     # get hydrogenase classification
     if args.add_hyddb:
         hyddb_df = pl.read_csv(
@@ -791,9 +792,11 @@ def plot_gene_neighbourhood(
         )
         hydclass = (
             hyddb_df.filter(pl.col("gene_id") == f"{gene_name}")
-            .select("classification")
-            .item()
+            .get_column("classification")
+            .first()
         )
+        if hydclass is not None:
+            figure_text = f"Species: {species}; Genome: {genome_name}; Gene: {target_gene_id}; [NiFe] group {hydclass}"
 
     # plot figure
     fig, ax = plt.subplots()
@@ -804,7 +807,7 @@ def plot_gene_neighbourhood(
     plt.figtext(
         0.02,
         -0.05,
-        rf"{species} ({genome_name}); Gene {target_gene_id}: [NiFe] group {hydclass}",
+        figure_text,
         ha="left",
         va="top",
         fontsize=12,
@@ -1046,7 +1049,7 @@ def annotation_extract(
     # anno_subset = anno.filter(pl.col("gene_callers_id").is_in(gene_ids))
 
     # Save annotation tsv subset
-    outpath = Path(output_dir) / gene_name / f"{gene_name}___annotations.tsv"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}-annotations.tsv"
     outpath.parent.mkdir(exist_ok=True, parents=True)
     anno_subset.collect().write_csv(outpath, separator="\t", include_header=True)
 
