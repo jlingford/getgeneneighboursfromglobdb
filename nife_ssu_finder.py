@@ -821,7 +821,11 @@ def plot_gene_neighbourhood(
 
     # plot figure
     fig, ax = plt.subplots()
-    ax, _ = record.plot(figure_width=20, strand_in_label_threshold=3)
+    ax, _ = record.plot(
+        figure_width=20,
+        strand_in_label_threshold=3,
+        max_label_length=100,
+    )
     ax.figure.tight_layout()
 
     # add genome name to figure
