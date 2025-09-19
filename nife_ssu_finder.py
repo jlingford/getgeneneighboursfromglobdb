@@ -835,7 +835,7 @@ def plot_gene_neighbourhood(
         figure_text,
         ha="left",
         va="top",
-        fontsize=12,
+        fontsize=14,
         style="normal",
     )
 
