@@ -46,6 +46,8 @@ from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+import matplotlib.font_manager as fm
 from dna_features_viewer import BiopythonTranslator, GraphicFeature, GraphicRecord
 from itertools import combinations_with_replacement
 
@@ -130,6 +132,15 @@ def parse_arguments() -> argparse.Namespace:
         required=False,
         metavar="FILE.tsv",
         help="Path to .tsv of gene ID's and respective HydDB classification",
+    )
+
+    parser.add_argument(
+        "--add_arial_font",
+        dest="add_arial_font",
+        type=Path,
+        required=False,
+        metavar="FONT.ttf",
+        help="Path to Arial font .ttf file to incorporate into final plot [Default: none]",
     )
 
     parser.add_argument(
@@ -717,6 +728,16 @@ def plot_gene_neighbourhood(
     gff_input = str(gff_input_file)
     window_start = args.upstream_window
     window_end = args.downstream_window
+
+    # add font if provided:
+    if args.add_arial_font:
+        arial_font = args.add_arial_font
+        # arial_font_bold = "/home/james/Downloads/Arial Bold.ttf"
+        fm.fontManager.addfont(arial_font)
+        # fm.fontManager.addfont(arial_font_bold)
+        rcParams["font.sans-serif"] = "Arial"
+        rcParams["font.family"] = "Arial"
+        rcParams["font.size"] = 10
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
     # TODO: update this with more colours/options
