@@ -1025,7 +1025,7 @@ def find_gff_file_from_index(
 def find_annotation_file_from_index(
     file_index: dict[str, list[Path]], target_name: str
 ) -> Path:
-    """Use prebuilt index to find annotation file of interest"""
+    """use prebuilt index to find annotation file of interest"""
     matches = [
         path
         for filename, paths in file_index.items()
@@ -1034,14 +1034,14 @@ def find_annotation_file_from_index(
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError(f"No file found for {target_name}.")
+        raise filenotfounderror(f"no file found for {target_name}.")
     return matches[0]
 
 
 def find_fasta_file_from_index(
     file_index: dict[str, list[Path]], target_name: str
 ) -> Path:
-    """Use prebuilt index to find fasta file of interest"""
+    """use prebuilt index to find fasta file of interest"""
     matches = [
         path
         for filename, paths in file_index.items()
@@ -1049,13 +1049,13 @@ def find_fasta_file_from_index(
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError(f"No file found for {target_name}.")
+        raise filenotfounderror(f"no file found for {target_name}.")
     return matches[0]
 
 
 def process_target_genes(args: argparse.Namespace) -> None:
-    """Handles processing input depending on what arguments were parsed"""
-    # Read or write index file of GlobDB
+    """handles processing input depending on what arguments were parsed"""
+    # read or write index file of globdb
     if args.index_path:
         pickle_file = args.index_path
         if pickle_file.is_file():
@@ -1063,24 +1063,24 @@ def process_target_genes(args: argparse.Namespace) -> None:
             with open(pickle_file, "rb") as f:
                 file_index = pickle.load(f)
     else:
-        print("Writing index from GlobDB dir provided. May take a while...")
+        print("writing index from globdb dir provided. may take a while...")
         new_pickle_file = "./globdb_index.pkl"
         file_index = build_file_index(args.data_dir)
         with open(new_pickle_file, "wb") as f:
             pickle.dump(file_index, f)
-            print(f"Index written to {new_pickle_file} in current directory")
+            print(f"index written to {new_pickle_file} in current directory")
 
-    # Process target genes from target list
+    # process target genes from target list
     if args.gene_list:
         with open(args.gene_list) as target_file:
             for line in target_file:
                 gene_name = line.rstrip()
-                print(f"Searching {gene_name}")
+                print(f"searching {gene_name}")
                 target_name = gene_name.split("___")[0]
                 try:
                     gff_file = find_gff_file_from_index(file_index, target_name)
-                except FileNotFoundError as e:
-                    print(f"WARNING: {e}. Skipping.")
+                except filenotfounderror as e:
+                    print(f"warning: {e}. skipping.")
                     continue
                 anno_file = find_annotation_file_from_index(file_index, target_name)
                 fasta_file = find_fasta_file_from_index(file_index, target_name)
@@ -1088,15 +1088,15 @@ def process_target_genes(args: argparse.Namespace) -> None:
                     args, gene_name, gff_file, anno_file, fasta_file
                 )
 
-    # Or process single target
+    # or process single target
     if args.gene_name:
         gene_name = args.gene_name.rstrip()
-        print(f"Searching {gene_name}")
+        print(f"searching {gene_name}")
         target_name = gene_name.split("___")[0]
         try:
             gff_file = find_gff_file_from_index(file_index, target_name)
-        except FileNotFoundError as e:
-            print(f"WARNING: {e} Skipping.")
+        except filenotfounderror as e:
+            print(f"warning: {e} skipping.")
             return
         anno_file = find_annotation_file_from_index(file_index, target_name)
         fasta_file = find_fasta_file_from_index(file_index, target_name)
@@ -1104,7 +1104,7 @@ def process_target_genes(args: argparse.Namespace) -> None:
 
 
 def main():
-    """Handles broad control flow of all functions"""
+    """handles broad control flow of all functions"""
     args = parse_arguments()
     process_target_genes(args)
 
