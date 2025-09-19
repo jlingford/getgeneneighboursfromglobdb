@@ -46,7 +46,7 @@ from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import matplotlib.pyplot as plt
-from dna_features_viewer import BiopythonTranslator
+from dna_features_viewer import BiopythonTranslator, GraphicFeature, GraphicRecord
 from itertools import combinations_with_replacement
 
 
@@ -729,13 +729,13 @@ def plot_gene_neighbourhood(
                     if gene_anno in NIFE_GROUP1_PPI_CODES:
                         return "#cba6f7"
                     if gene_anno in NIFE_GROUP2_PPI_CODES:
-                        return "#cba6f7"
+                        return "#f5c2e7"
                     if gene_anno in NIFE_GROUP3_PPI_CODES:
-                        return "#cba6f7"
+                        return "#94e2d5"
                     if gene_anno in NIFE_GROUP4_PPI_CODES:
-                        return "#cba6f7"
+                        return "#b4befe"
                     if gene_anno in NIFE_FRHB_CODES:
-                        return "#cba6f7"
+                        return "#94e2d5"
                     if gene_anno in NIFE_SSU_CODES:
                         return "#89b4fa"
                     if gene_anno in NIFE_MATURATION_CODES:
