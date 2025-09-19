@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from numpy import select
+from numpy import dtype, select
 import polars as pl
 from pathlib import Path
 import pickle
@@ -38,7 +38,6 @@ def taxonomy_dataframe(taxonomy_file: Path) -> pl.DataFrame:
         has_header=False,
         new_columns=["genome_id", "taxonomy_string"],
     )
-
     # remove prefix from taxa names, split taxonomy_string into new columns on ";", and rename columns to taxa
     df = (
         df.with_columns(
@@ -57,8 +56,10 @@ def taxonomy_dataframe(taxonomy_file: Path) -> pl.DataFrame:
             }
         )
     )
-
     return df
 
 
-# result = df.filter(pl.col("genome_id") == "MOTU40_070268").select("species")
+df = taxonomy_dataframe(taxonomy_file)
+result = df.filter(pl.col("genome_id") == "MOTU40_070268").select("species").item()
+
+print(str(result))
