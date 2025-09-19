@@ -713,10 +713,8 @@ def plot_gene_neighbourhood(
     # TODO: update this with more colours/options
     class CustomTranslator(BiopythonTranslator):
         def compute_feature_color(self, feature):
-            # Color the target gene green, annotation matches blue, and all others grey
             if "ID" in feature.qualifiers:
-                gene_id = feature.qualifiers["ID"][0]
-                gene_id = gene_id.split("___")[1]
+                gene_id = feature.qualifiers["ID"][0].split("___")[1]
                 if "product" in feature.qualifiers:
                     gene_desc = feature.qualifiers["product"][0]
                     if "maturation" in gene_desc:
@@ -725,7 +723,7 @@ def plot_gene_neighbourhood(
                         return "#f9e2af"
                 if "Name" in feature.qualifiers:
                     gene_anno = feature.qualifiers["Name"][0]
-                    # colour genes that match annotations of familiar neighbours blue
+                    # colour genes that match annotations of familiar neighbours
                     if gene_anno in IRON_HYDROGENASE_CODES:
                         return "#f5a97f"
                     if gene_anno in NIFE_GROUP1_PPI_CODES:
@@ -768,7 +766,7 @@ def plot_gene_neighbourhood(
 
     # get taxonomy/species name of genome
     species = (
-        taxonomy_df.filter(pl.col(f"genome_id") == f"{genome_name}")
+        taxonomy_df.filter(pl.col("genome_id") == f"{genome_name}")
         .select("species")
         .item()
     )
