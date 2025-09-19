@@ -120,9 +120,11 @@ NIFE_FRHB_CODES = [
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 # TODO: add other cytochrome codes?
 NIFE_GROUP1_PPI_CODES = [
+    "COG0437",  # Fe-S-cluster-containing dehydrogenase component (DMSO reductase) (HybA) (PDB:2VPW)
     "COG1969",  # Ni,Fe-hydrogenase I cytochrome b subunit (HyaC) (PDB:4GD3)
     "COG3658",  # Cytochrome b subunit of Ni2+-dependent hydrogenase (CytB)
     "COG5557",  # Ni/Fe-hydrogenase 2 integral membrane subunit HybB (HybB)
+    "K00124",  # formate dehydrogenase iron-sulfur subunit
     "K03620",  # Ni/Fe-hydrogenase 1 B-type cytochrome subunit
     "K04013",  # cytochrome c-type protein NrfB
     "K14069",  # methanophenazine hydrogenase, cytochrome b subunit [EC:1.12.98.3]
