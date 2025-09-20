@@ -9,7 +9,6 @@ fonttools==4.59.0
 gitdb==4.0.12
 GitPython==3.1.44
 humanfriendly==10.0
-jupynium==0.2.6+4.g144ab6e
 kiwisolver==1.4.8
 matplotlib==3.10.3
 matplotlib-backend-kitty==2.1.2
