@@ -6,15 +6,14 @@ Control flow:
 >main()
     ↳ parse_arguments()
     ↳ process_target_genes()
+        ↳ annotation_extract()
         ↳ extract_gene_neighbourhood()
             ↳ replace_gff_attributes()
             ↳ plot_gene_neighbourhood()
             ↳ fasta_neighbourhood_extract()
                 ↳ fasta_pairwise_generation()
-        ↳ annotation_extract()
 """
 # TODO:
-# change -n to nargs=+
 # add logging output to argparse function
 
 # imports
@@ -190,13 +189,19 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--plot_format",
-        dest="plot_format",
-        choices=["png", "pdf", "svg"],
-        default="png",
+        "--pdf_format",
+        dest="pdf_format",
+        action="store_true",
         required=False,
-        metavar="STR",
-        help="File format for output plot. Choices = png, pdf, svg [Default: png]",
+        help="Also save plot in .pdf format [Default: off]",
+    )
+
+    parser.add_argument(
+        "--svg_format",
+        dest="svg_format",
+        action="store_true",
+        required=False,
+        help="Also save plot in .svg format [Default: off]",
     )
 
     parser.add_argument(
@@ -289,6 +294,12 @@ def parse_arguments() -> argparse.Namespace:
     ) and not (args.pairwise_set1 or args.pairwise_set2):
         parser.error(
             "--pairwise_set1 or --pairwise_set2 options must be set too alongside the --boltz_fastas, --chai_fastas, --colabfold_fastas, and --regular_fastas options"
+        )
+
+    # check plotting output args
+    if (args.no_plot) and (args.pdf_format or args.svg_format or args.plot_dpi):
+        parser.error(
+            "--no_plot and --dpi/--pdf_format/--svg_format options are incompatible"
         )
 
     return args
@@ -722,7 +733,6 @@ def plot_gene_neighbourhood(
     # params
     output_dir = args.output_dir
     dpi = args.plot_dpi
-    format = args.plot_format
     target_gene_id = gene_name.split("___")[1]
     genome_name = gene_name.split("___")[0]
     gff_input = str(gff_input_file)
@@ -840,9 +850,19 @@ def plot_gene_neighbourhood(
     )
 
     # save figure
-    outpath = Path(output_dir) / gene_name / f"{gene_name}-plot.{format}"
+    outpath = Path(output_dir) / gene_name / f"{gene_name}-plot.png"
     outpath.parent.mkdir(exist_ok=True, parents=True)
-    ax.figure.savefig(outpath, dpi=dpi, format=format, bbox_inches="tight")
+    ax.figure.savefig(outpath, dpi=dpi, format="png", bbox_inches="tight")
+
+    if args.pdf_format:
+        outpath = Path(output_dir) / gene_name / f"{gene_name}-plot.pdf"
+        outpath.parent.mkdir(exist_ok=True, parents=True)
+        ax.figure.savefig(outpath, dpi=dpi, format="pdf", bbox_inches="tight")
+    if args.svg_format:
+        outpath = Path(output_dir) / gene_name / f"{gene_name}-plot.svg"
+        outpath.parent.mkdir(exist_ok=True, parents=True)
+        ax.figure.savefig(outpath, dpi=dpi, format="svg", bbox_inches="tight")
+
     # close figure to avoid memory issues
     plt.close("all")
 
