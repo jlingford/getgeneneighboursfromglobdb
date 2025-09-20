@@ -742,9 +742,7 @@ def plot_gene_neighbourhood(
     # add font if provided:
     if args.add_arial_font:
         arial_font = args.add_arial_font
-        # arial_font_bold = "/home/james/Downloads/Arial Bold.ttf"
         fm.fontManager.addfont(arial_font)
-        # fm.fontManager.addfont(arial_font_bold)
         rcParams["font.sans-serif"] = "Arial"
         rcParams["font.family"] = "Arial"
         rcParams["font.size"] = 10
@@ -752,6 +750,15 @@ def plot_gene_neighbourhood(
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
     # TODO: update this with more colours/options
     class CustomTranslator(BiopythonTranslator):
+        # def compute_feature_linewidth(self, feature):
+        #     return 0
+
+        def compute_feature_label_link_color(self, feature):
+            return "#ffffff"
+
+        def compute_feature_box_linewidth(self, feature):
+            return 0
+
         def compute_feature_color(self, feature):
             if "ID" in feature.qualifiers:
                 gene_id = feature.qualifiers["ID"][0].split("___")[1]
@@ -792,6 +799,10 @@ def plot_gene_neighbourhood(
     record = CustomTranslator().translate_record(
         record=gff_input, record_class="linear", filetype="gff"
     )
+
+    # make sure all gene arrows are on the same line
+    record.feature_level_height = 0
+    # record.annotation_height = 2
 
     # Suppose goi_start/goi_end are gene positions on this scaffold
     window_start = max(0, goi_start - args.upstream_window)
