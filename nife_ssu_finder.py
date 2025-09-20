@@ -749,7 +749,7 @@ def plot_gene_neighbourhood(
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
     # TODO: update this with more colours/options
-    class CustomTranslator(BiopythonTranslator, GraphicRecord):
+    class CustomTranslator(BiopythonTranslator, GraphicRecord, GraphicFeature):
         # def compute_feature_linewidth(self, feature):
         #     return 0
 
@@ -761,6 +761,17 @@ def plot_gene_neighbourhood(
 
         def compute_feature_box_linewidth(self, feature):
             return 0  # remove ugly borders from annotation boxes
+
+        # TODO:
+        # def compute_feature_label(self, feature):
+        #     if "ID" in feature.qualifiers:
+        #         gene_id = feature.qualifiers["ID"][0].split("___")[1]
+        #         # return gene_id
+        #         if "Name" in feature.qualifiers:
+        #             gene_anno = feature.qualifiers["Name"][0]
+        #             if gene_anno in NIFE_LSU_CODES:
+        #                 return gene_id
+        #     return super().compute_feature_label(feature)
 
         def compute_feature_color(self, feature):
             if "ID" in feature.qualifiers:
@@ -852,6 +863,30 @@ def plot_gene_neighbourhood(
         max_label_length=100,
     )
     # ax.figure.tight_layout()
+
+    # TODO:
+    # for feature in record.features:
+    #     if feature.label:  # Now contains the gene ID
+    #         mid = (feature.start + feature.end) / 2
+    #         ax.text(mid, 0, feature.label, ha="center", va="center", fontsize=6)
+    #     # if "ID" in feature.qualifiers:
+    #     gene_id = feature.qualifiers["ID"][0].split("___")[1]
+    #     print(gene_id)
+    #     # Find the midpoint of the arrow
+    #     start = feature.location.start
+    #     end = feature.location.end
+    #     mid = (start + end) / 2
+    #     # Plot ID text inside arrow
+    #     ax.text(
+    #         mid,
+    #         0,  # vertical center line of arrows
+    #         gene_id,
+    #         ha="center",
+    #         va="center",
+    #         fontsize=6,
+    #         color="black",
+    #         clip_on=True,  # ensures text is clipped by axes
+    #     )
 
     # add space for plt.figtext
     fig.subplots_adjust(bottom=0.55)
