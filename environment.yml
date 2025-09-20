@@ -5,6 +5,7 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
+  - _python_abi3_support=1.0=hd8ed1ab_2
   - alsa-lib=1.2.14=hb9d3cd8_0
   - biopython=1.85=py313h536fd9c_1
   - brotli=1.1.0=hb9d3cd8_3
@@ -13,6 +14,7 @@ dependencies:
   - ca-certificates=2025.7.14=hbd8a1cb_0
   - cairo=1.18.4=h3394656_0
   - contourpy=1.3.2=py313h33d0bda_0
+  - cpython=3.13.7=py313hd8ed1ab_100
   - cycler=0.12.1=pyhd8ed1ab_1
   - cyrus-sasl=2.1.28=hd9c7081_0
   - dbus=1.16.2=h3c4dab8_0
@@ -100,11 +102,14 @@ dependencies:
   - pillow=11.3.0=py313h8db990d_0
   - pip=25.1.1=pyh145f28c_0
   - pixman=0.46.4=h537e5f6_0
+  - polars=1.33.1=default_h755bcc6_0
+  - polars-default=1.33.1=py39hf521cc8_0
   - pthread-stubs=0.4=hb9d3cd8_1002
   - pyparsing=3.2.3=pyhd8ed1ab_1
   - pyside6=6.9.1=py313h7dabd7a_0
   - python=3.13.5=hec9711d_102_cp313
   - python-dateutil=2.9.0.post0=pyhe01879c_2
+  - python-gil=3.13.7=h4df99d1_100
   - python-tzdata=2025.2=pyhd8ed1ab_0
   - python_abi=3.13=8_cp313
   - pytz=2025.2=pyhd8ed1ab_0
