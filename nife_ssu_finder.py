@@ -749,15 +749,18 @@ def plot_gene_neighbourhood(
 
     # Define custom class for dna_features_viewer. see: https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html#custom-biopython-translators
     # TODO: update this with more colours/options
-    class CustomTranslator(BiopythonTranslator):
+    class CustomTranslator(BiopythonTranslator, GraphicRecord):
         # def compute_feature_linewidth(self, feature):
         #     return 0
 
+        def determine_annotation_height(self, levels):
+            return 50
+
         def compute_feature_label_link_color(self, feature):
-            return "#ffffff"
+            return "#ffffff"  # hide lines linking gene boxes to annotation boxes by making them white
 
         def compute_feature_box_linewidth(self, feature):
-            return 0
+            return 0  # remove ugly borders from annotation boxes
 
         def compute_feature_color(self, feature):
             if "ID" in feature.qualifiers:
@@ -802,7 +805,8 @@ def plot_gene_neighbourhood(
 
     # make sure all gene arrows are on the same line
     record.feature_level_height = 0
-    # record.annotation_height = 2
+    record.labels_spacing = 10  # padding around annotation text and box
+    # record.annotation_height = 100
 
     # Suppose goi_start/goi_end are gene positions on this scaffold
     window_start = max(0, goi_start - args.upstream_window)
@@ -822,7 +826,7 @@ def plot_gene_neighbourhood(
         .item()
     )
 
-    figure_text = f"Species: {species}; Genome: {genome_name}; Gene: {target_gene_id}"
+    figure_text = f"{species} ({genome_name}); gene ID: {target_gene_id}"
 
     # get hydrogenase classification
     if args.add_hyddb:
@@ -838,7 +842,7 @@ def plot_gene_neighbourhood(
             .first()
         )
         if hydclass is not None:
-            figure_text = f"Species: {species}; Genome: {genome_name}; Gene: {target_gene_id}; [NiFe] group {hydclass}"
+            figure_text = f"{species} ({genome_name}); gene ID: {target_gene_id}; [NiFe] group {hydclass}"
 
     # plot figure
     fig, ax = plt.subplots()
@@ -847,16 +851,19 @@ def plot_gene_neighbourhood(
         strand_in_label_threshold=3,
         max_label_length=100,
     )
-    ax.figure.tight_layout()
+    # ax.figure.tight_layout()
+
+    # add space for plt.figtext
+    fig.subplots_adjust(bottom=0.55)
 
     # add genome name to figure
     plt.figtext(
-        0.02,
-        -0.05,
+        0.12,
+        -0.20,
         figure_text,
         ha="left",
         va="top",
-        fontsize=14,
+        fontsize=12,
         style="normal",
     )
 
