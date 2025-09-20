@@ -1,0 +1,44 @@
+bcbio-gff==0.7.1
+biopython @ file:///home/conda/feedstock_root/build_artifacts/biopython_1737241734339/work
+certifi==2025.7.9
+coloredlogs==15.0.1
+contourpy @ file:///home/conda/feedstock_root/build_artifacts/contourpy_1744743065687/work
+cycler @ file:///home/conda/feedstock_root/build_artifacts/cycler_1733332471406/work
+dna_features_viewer @ file:///opt/conda/conda-bld/dna_features_viewer_1746821656157/work
+fonttools @ file:///home/conda/feedstock_root/build_artifacts/fonttools_1752722674086/work
+gitdb==4.0.12
+GitPython==3.1.44
+humanfriendly==10.0
+jupynium @ file:///home/james/.local/share/LazyVim/lazy/jupynium.nvim
+kiwisolver @ file:///home/conda/feedstock_root/build_artifacts/kiwisolver_1751493883389/work
+matplotlib==3.10.3
+matplotlib-backend-kitty==2.1.2
+munkres==1.1.4
+numpy @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_numpy_1752612967/work/dist/numpy-2.3.1-cp313-cp313-linux_x86_64.whl#sha256=5615ede4bf83a5b9e9756ad5ee44f1db575600653f1684fc7531c1d68e23c880
+outcome==1.3.0.post0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+pandas @ file:///home/conda/feedstock_root/build_artifacts/pandas_1752081722123/work
+patsy @ file:///home/conda/feedstock_root/build_artifacts/patsy_1733792384640/work
+persist-queue==1.0.0
+pillow @ file:///home/conda/feedstock_root/build_artifacts/pillow_1751481983695/work
+polars @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_polars-default_1757413932/work
+pyparsing @ file:///home/conda/feedstock_root/build_artifacts/pyparsing_1743089729650/work
+PySide6==6.9.1
+python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-dateutil_1751104122/work
+pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1742920838005/work
+scipy @ file:///home/conda/feedstock_root/build_artifacts/scipy-split_1751147405205/work/dist/scipy-1.16.0-cp313-cp313-linux_x86_64.whl#sha256=7d6c3616a5ebbc20f277ff8669122a09ee1b84c533ba05ab58942b2b5eb4f0a6
+seaborn @ file:///home/conda/feedstock_root/build_artifacts/seaborn-split_1733730015268/work
+selenium==4.34.2
+shiboken6==6.9.1
+six @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_six_1753199211/work
+smmap==5.0.2
+sortedcontainers==2.4.0
+statsmodels @ file:///home/conda/feedstock_root/build_artifacts/statsmodels_1751917457520/work
+tornado @ file:///home/conda/feedstock_root/build_artifacts/tornado_1748003317636/work
+trio==0.30.0
+trio-websocket==0.12.2
+typing_extensions==4.14.1
+tzdata @ file:///home/conda/feedstock_root/build_artifacts/python-tzdata_1742745135198/work
+urllib3==2.5.0
+verboselogs==1.7
+wsproto==1.2.0
