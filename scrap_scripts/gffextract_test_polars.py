@@ -7,7 +7,8 @@ from pathlib import Path
 gfffile = "/run/media/james/T7/globdb_r226/globdb_r226_gff_cog/R226CHUNK000/AMXMAG_0088_cog.gff.gz"
 outfile = "./gff_test.tsv"
 # gene_name = "AMXMAG_0088___3888"
-gene_name = "AMXMAG_0088___38789"
+gene_name = "AMXMAG_0088___3878"
+# gene_name = "AMXMAG_0088___38789"
 
 # params
 upstream_window = 100000
@@ -38,8 +39,14 @@ print(raw_gff)
 # Find gene of interest (GOI) in .gff file
 goi_row = raw_gff.filter(pl.col("attributes").str.contains(f"ID={gene_name}(?:;|$)"))
 
+print(f"number of rows = {goi_row.height}")
+print(f"number of rows type = {type(goi_row.height)}")
+
 if goi_row.is_empty():
     print("Is empty!")
+
+if goi_row.height > 1:
+    print("ERROR: multiple matches")
 
 print(goi_row)
 
