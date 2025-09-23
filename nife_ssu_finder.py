@@ -435,6 +435,7 @@ def extract_gene_neighbourhood(
     )
 
     # clean annotation dataframe so dna_features_viewer plotting won't crash. For "!!!" in their names and description, only keep the first name and description
+    # TODO: replace other weird characters in annotations description?
     anno_df = anno_df.with_columns(
         pl.col("Name").str.extract(r"([^!]+)"),
         pl.col("product")
