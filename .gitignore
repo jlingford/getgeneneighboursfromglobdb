@@ -2,5 +2,12 @@
 # data/
 # data2/
 output/
-# output/
 # scrap_scripts/
+input/
+*.log
+*.err
+*.out
+*.pyc
+constants/__pycache__/
+globdb_index.pkl
+rp24_scratch2/
