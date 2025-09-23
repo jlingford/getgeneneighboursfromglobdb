@@ -434,10 +434,13 @@ def extract_gene_neighbourhood(
         schema_overrides={"evalue": pl.Float64},
     )
 
-    # clean rows that contain "!!!" in their names and description, only keeping the first name and description
+    # clean annotation dataframe so dna_features_viewer plotting won't crash. For "!!!" in their names and description, only keep the first name and description
     anno_df = anno_df.with_columns(
         pl.col("Name").str.extract(r"([^!]+)"),
-        pl.col("product").str.extract(r"([^!]+)"),
+        pl.col("product")
+        .str.extract(r"([^!]+)")  # keep only strings before first "!!!"
+        .str.replace_all("=", "")  # replace any "=" (causes errors)
+        .str.replace_all(";", ","),  # replace any ";" with comma
     )
 
     # filter to use only certain HMM codes
