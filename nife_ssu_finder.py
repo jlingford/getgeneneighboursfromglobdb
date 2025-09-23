@@ -615,7 +615,13 @@ def extract_gene_neighbourhood(
     if args.no_plot is not True:
         try:
             plot_gene_neighbourhood(
-                args, gene_name, gff_input_file, goi_start, goi_end, taxonomy_df
+                args,
+                gene_name,
+                gff_input_file,
+                goi_start,
+                goi_end,
+                taxonomy_df,
+                rebuilt_gff_full,
             )
         except Exception as e:
             print(
@@ -682,7 +688,7 @@ def extract_nife_ssu(
     )
 
     # identify candidate matching codes
-    # TODO: use annotation table instead of single attributes column... do same for gff_extract function
+    # TODO: refactor to be more readable, like extract_gene_neighbourhood function
     ssu_candidates = neighbours.filter(
         pl.any_horizontal(
             [pl.col("attributes").str.contains(code) for code in NIFE_SSU_CODES]
@@ -773,6 +779,7 @@ def plot_gene_neighbourhood(
     goi_start: str,
     goi_end: str,
     taxonomy_df: pl.DataFrame,
+    gff_df: pl.DataFrame,
 ) -> None:
     """Plot the genetic neighbourhood around gene of interest using dna_features_viewer"""
     # params
@@ -876,13 +883,21 @@ def plot_gene_neighbourhood(
     record = record.crop((window_start, window_end))
 
     # get taxonomy/species name of genome
-    species = (
+    # TODO: access species column for plot?
+    species, taxonomy_string = (
         taxonomy_df.filter(pl.col("genome_id") == f"{genome_name}")
         .select("species")
-        .item()
+        .item(),
+        taxonomy_df.filter(pl.col("genome_id") == f"{genome_name}")
+        .select("taxonomy_string")
+        .item(),
     )
 
-    figure_text = f"{species} ({genome_name}); gene ID: {target_gene_id}"
+    # get scaffold name from gff_df
+    scaffold = gff_df.item(0, "seqid")
+
+    # TODO: print this text out better?
+    figure_text = f"Scaffold:         {scaffold}\nGenome:        {genome_name} (gene: {target_gene_id})\nTaxonomy:      {taxonomy_string}"
 
     # get hydrogenase classification
     if args.add_hyddb:
@@ -898,7 +913,8 @@ def plot_gene_neighbourhood(
             .first()
         )
         if hydclass is not None:
-            figure_text = f"{species} ({genome_name}); gene ID: {target_gene_id}; [NiFe] group {hydclass}"
+            # TODO: print this text out better?
+            figure_text = f"Scaffold:         {scaffold}\nGenome:        {genome_name} (gene: {target_gene_id});    [NiFe] group {hydclass}\nTaxonomy:      {taxonomy_string}"
 
     # plot figure
     fig, ax = plt.subplots()
