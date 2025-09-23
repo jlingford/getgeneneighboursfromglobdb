@@ -17,7 +17,6 @@ Control flow:
 # add logging output to argparse function
 
 # imports
-from re import sub
 from constants.nife_hmm_codes import (
     NIFE_LSU_CODES,
     NIFE_SSU_CODES,
@@ -30,25 +29,26 @@ from constants.nife_hmm_codes import (
     NIFE_PPI_CANDIDATES,
     IRON_HYDROGENASE_CODES,
 )
-import shutil
-from io import TextIOWrapper
-from string import ascii_uppercase
-import pickle
-import gzip
-import logging
-import argparse
-import textwrap
-import polars as pl
-from BCBio import GFF
-from pathlib import Path
-from collections import defaultdict
+from BCBio import GFF  # required for dna_features_viewer
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-import matplotlib.font_manager as fm
+from collections import defaultdict
 from dna_features_viewer import BiopythonTranslator, GraphicFeature, GraphicRecord
+from io import TextIOWrapper
 from itertools import combinations_with_replacement
+from matplotlib import rcParams
+from pathlib import Path
+from re import sub
+from string import ascii_uppercase
+import argparse
+import gzip
+import logging
+import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
+import pickle
+import polars as pl
+import shutil
+import textwrap
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -344,6 +344,9 @@ def extract_gene_neighbourhood(
         pl.col("attributes").str.contains(f"ID={gene_name}(?:;|$)")
     )
 
+    if goi_row.is_empty():
+        raise ValueError(f"{gene_name} is not found in {gff_file.name}")
+
     # Get genetic neighbourhood coordinates to center on gene of interest
     goi_start = goi_row[0, "start"]
     goi_end = goi_row[0, "end"]
@@ -581,24 +584,37 @@ def extract_gene_neighbourhood(
     # plot gene neighbourhood figure
     gff_input_file = gff_outpath
     if args.no_plot is not True:
-        plot_gene_neighbourhood(
-            args, gene_name, gff_input_file, goi_start, goi_end, taxonomy_df
-        )
+        try:
+            plot_gene_neighbourhood(
+                args, gene_name, gff_input_file, goi_start, goi_end, taxonomy_df
+            )
+        except Exception as e:
+            print(
+                f"ERROR: issue plotting gene neighbourhood for {gff_file.name} at {gene_name}: {e}"
+            )
 
     # extract fasta sequences
-    fasta_file_subset = fasta_neighbourhood_extract(
-        args,
-        gene_name,
-        fasta_file,
-        anno_file_subset,
-        gene_ids,
-        gene_ids_nomaturation,
-        gene_ids_ppi_candidates,
-    )
+    try:
+        fasta_file_subset = fasta_neighbourhood_extract(
+            args,
+            gene_name,
+            fasta_file,
+            anno_file_subset,
+            gene_ids,
+            gene_ids_nomaturation,
+            gene_ids_ppi_candidates,
+        )
+    except Exception as e:
+        print(
+            f"ERROR: issue extracting sequences from {fasta_file.name} for {gene_name}: {e}"
+        )
 
     # call nife ssu extractor, uses fasta file generated from previous step as input
     if args.no_ssu is not True:
-        extract_nife_ssu(args, gene_name, rebuilt_gff_full, fasta_file_subset)
+        try:
+            extract_nife_ssu(args, gene_name, rebuilt_gff_full, fasta_file_subset)
+        except Exception as e:
+            print(f"ERROR: issue extracting NiFe SSU for {gene_name}: {e}")
 
 
 def extract_nife_ssu(
@@ -1214,7 +1230,7 @@ def find_fasta_file_from_index(
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError(f"no file found for {target_name}.")
+        raise FileNotFoundError(f"No fasta file found for {target_name}.")
     return matches[0]
 
 
@@ -1228,12 +1244,14 @@ def find_taxonomy_file_from_index(file_index: dict[str, list[Path]]) -> Path:
         for path in paths
     ]
     if not matches:
-        raise FileNotFoundError("ERROR: No taxonomy file found")
+        raise FileNotFoundError("No taxonomy file found")
     return matches[0]
 
 
 def process_target_genes(args: argparse.Namespace) -> None:
-    """handles processing input depending on what arguments were parsed"""
+    """
+    Reads or writes GlobDB index for quick file lookup and processing, then finds input files needed for gene neighbourhood extraction, and runs extract_gene_neighbourhood() function
+    """
     # read or write index file of globdb
     file_index = None
     if args.index_path:
@@ -1243,7 +1261,7 @@ def process_target_genes(args: argparse.Namespace) -> None:
             with open(pickle_file, "rb") as f:
                 file_index = pickle.load(f)
     else:
-        print("writing index from globdb dir provided. may take a while...")
+        print("Writing index from GlobDB dir provided. This may take a while...")
         new_pickle_file = "./globdb_index.pkl"
         file_index = build_file_index(args.data_dir)
         with open(new_pickle_file, "wb") as f:
@@ -1252,8 +1270,11 @@ def process_target_genes(args: argparse.Namespace) -> None:
 
     # TODO:
     # find and process taxonomy.tsv file once
-    taxonomy_file = find_taxonomy_file_from_index(file_index)
-    taxonomy_df = taxonomy_dataframe(taxonomy_file)
+    try:
+        taxonomy_file = find_taxonomy_file_from_index(file_index)
+        taxonomy_df = taxonomy_dataframe(taxonomy_file)
+    except FileNotFoundError as e:
+        print(f"{e}")
 
     # process target genes from target list
     if args.gene_list:
@@ -1265,13 +1286,25 @@ def process_target_genes(args: argparse.Namespace) -> None:
                 try:
                     gff_file = find_gff_file_from_index(file_index, target_name)
                 except FileNotFoundError as e:
-                    print(f"warning: {e}. skipping.")
+                    print(f"ERROR: {e}. skipping.")
                     continue
-                anno_file = find_annotation_file_from_index(file_index, target_name)
-                fasta_file = find_fasta_file_from_index(file_index, target_name)
-                extract_gene_neighbourhood(
-                    args, gene_name, gff_file, anno_file, fasta_file, taxonomy_df
-                )
+                try:
+                    anno_file = find_annotation_file_from_index(file_index, target_name)
+                except FileNotFoundError as e:
+                    print(f"ERROR: {e}. skipping.")
+                    continue
+                try:
+                    fasta_file = find_fasta_file_from_index(file_index, target_name)
+                except FileNotFoundError as e:
+                    print(f"ERROR: {e}. skipping.")
+                    continue
+                try:
+                    extract_gene_neighbourhood(
+                        args, gene_name, gff_file, anno_file, fasta_file, taxonomy_df
+                    )
+                except Exception as e:
+                    print(f"ERROR: issue processing {gene_name}: {e}. Skipping")
+                    continue
 
     # or process single target
     if args.gene_name:
@@ -1281,17 +1314,25 @@ def process_target_genes(args: argparse.Namespace) -> None:
         try:
             gff_file = find_gff_file_from_index(file_index, target_name)
         except FileNotFoundError as e:
-            print(f"warning: {e} skipping.")
-            return
-        anno_file = find_annotation_file_from_index(file_index, target_name)
-        fasta_file = find_fasta_file_from_index(file_index, target_name)
-        extract_gene_neighbourhood(
-            args, gene_name, gff_file, anno_file, fasta_file, taxonomy_df
-        )
+            print(f"ERROR: {e}.")
+        try:
+            anno_file = find_annotation_file_from_index(file_index, target_name)
+        except FileNotFoundError as e:
+            print(f"ERROR: {e}.")
+        try:
+            fasta_file = find_fasta_file_from_index(file_index, target_name)
+        except FileNotFoundError as e:
+            print(f"ERROR: {e}.")
+        try:
+            extract_gene_neighbourhood(
+                args, gene_name, gff_file, anno_file, fasta_file, taxonomy_df
+            )
+        except Exception as e:
+            print(f"ERROR: issue processing {gene_name}: {e}. Skipping")
 
 
 def main():
-    """handles broad control flow of all functions"""
+    """Processes args and launches file input and gene target processing function"""
     args = parse_arguments()
     process_target_genes(args)
 
