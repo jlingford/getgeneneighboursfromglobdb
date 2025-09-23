@@ -344,37 +344,62 @@ def extract_gene_neighbourhood(
         pl.col("attributes").str.contains(f"ID={gene_name}(?:;|$)")
     )
 
+    # check that gene of interest exists and is unique
     if goi_row.is_empty():
         raise ValueError(f"{gene_name} is not found in {gff_file.name}")
+    if goi_row.height > 1:
+        raise ValueError(
+            f"More than one instance of {gene_name} is found in {gff_file.name}"
+        )
 
     # Get genetic neighbourhood coordinates to center on gene of interest
-    goi_start = goi_row[0, "start"]
-    goi_end = goi_row[0, "end"]
-    goi_scaffold = goi_row[0, "seqid"]
-    goi_strand = goi_row[0, "strand"]
+    goi_start = goi_row.select("start").item()
+    goi_end = goi_row.select("end").item()
+    goi_scaffold = goi_row.select("seqid").item()
+    goi_strand = goi_row.select("strand").item()
 
-    # Define window coordinates
-    window_start: int = max(goi_start - upstream_window, 0)
-    window_end: int = goi_end + downstream_window
-
-    # Get subset of gff file based on window. Get genes from both strands, unless -S|--one_strand flag is provided
-    if args.one_strand is True:
-        # gff of all genes in the target neighbourhood
-        gff_subset = raw_gff.filter(
-            (pl.col("strand") == goi_strand)
-            & (pl.col("seqid") == goi_scaffold)
-            & (pl.col("start") <= window_end)
-            & (pl.col("end") >= window_start)
-            & (pl.col("type") == "CDS")
-        )
+    # Define window coordinates, conditional on strand direction
+    if goi_strand == "+":
+        window_start: int = max(goi_start - upstream_window, 1)
+        window_end: int = goi_end + downstream_window
     else:
-        # gff of all genes in the target neighbourhood
-        gff_subset = raw_gff.filter(
-            (pl.col("seqid") == goi_scaffold)
-            & (pl.col("start") <= window_end)
-            & (pl.col("end") >= window_start)
-            & (pl.col("type") == "CDS")
-        )
+        window_start: int = goi_start + upstream_window
+        window_end: int = max(goi_end - downstream_window, 1)
+
+    # Get subset of gff file based on window. Get genes from both strands, unless -S|--same_strand flag is provided
+    # Also: calculates window relative to GOI strand direction
+    if args.same_strand is True:
+        if goi_strand == "+":
+            gff_subset = raw_gff.filter(
+                (pl.col("seqid") == goi_scaffold)
+                & (pl.col("start") <= window_end)
+                & (pl.col("end") >= window_start)
+                & (pl.col("type") == "CDS")
+                & (pl.col("strand") == goi_strand)
+            )
+        else:
+            gff_subset = raw_gff.filter(
+                (pl.col("seqid") == goi_scaffold)
+                & (pl.col("start") >= window_end)
+                & (pl.col("end") <= window_start)
+                & (pl.col("type") == "CDS")
+                & (pl.col("strand") == goi_strand)
+            )
+    else:
+        if goi_strand == "+":
+            gff_subset = raw_gff.filter(
+                (pl.col("seqid") == goi_scaffold)
+                & (pl.col("start") <= window_end)
+                & (pl.col("end") >= window_start)
+                & (pl.col("type") == "CDS")
+            )
+        else:
+            gff_subset = raw_gff.filter(
+                (pl.col("seqid") == goi_scaffold)
+                & (pl.col("start") >= window_end)
+                & (pl.col("end") <= window_start)
+                & (pl.col("type") == "CDS")
+            )
 
     # return list of gene IDs for fasta file output, called at end of this function
     gene_ids: list = (
@@ -481,23 +506,23 @@ def extract_gene_neighbourhood(
         )
     )
 
-    # TODO: figure out what to do with this...
-    # get a gene list of just SSU candidates
-    gff_subset_ssus = rebuilt_gff_full.filter(
-        pl.col("attributes").str.contains_any(NIFE_SSU_CODES)
-        & (~pl.col("attributes").str.contains(rf"ID={gene_name}(?:;|$)"))
-    )
-    # gene_ids_ssu_candidates: list = (
-    #     gff_subset_ssus.select(
-    #         pl.col("attributes")
-    #         .str.extract_groups(r"ID=([^;]+)")
-    #         .struct.field("1")
-    #         .alias("gene_id")
-    #     )
-    #     .to_series()
-    #     .unique()
-    #     .to_list()
+    # # TODO: figure out what to do with this...
+    # # get a gene list of just SSU candidates
+    # gff_subset_ssus = rebuilt_gff_full.filter(
+    #     pl.col("attributes").str.contains_any(NIFE_SSU_CODES)
+    #     & (~pl.col("attributes").str.contains(rf"ID={gene_name}(?:;|$)"))
     # )
+    # # gene_ids_ssu_candidates: list = (
+    # #     gff_subset_ssus.select(
+    # #         pl.col("attributes")
+    # #         .str.extract_groups(r"ID=([^;]+)")
+    # #         .struct.field("1")
+    # #         .alias("gene_id")
+    # #     )
+    # #     .to_series()
+    # #     .unique()
+    # #     .to_list()
+    # # )
 
     # gff subset WITHOUT maturation genes, for smaller fasta file extraction
     gff_subset_nomaturation = rebuilt_gff_full.filter(
