@@ -62,4 +62,20 @@ def taxonomy_dataframe(taxonomy_file: Path) -> pl.DataFrame:
 df = taxonomy_dataframe(taxonomy_file)
 result = df.filter(pl.col("genome_id") == "MOTU40_070268").select("species").item()
 
-print(str(result))
+genome_name = "MOTU40_070268"
+
+# get taxonomy/species name of genome
+species = df.filter(pl.col("genome_id") == f"{genome_name}").select("species").item()
+taxonomy_string = (
+    df.filter(pl.col("genome_id") == f"{genome_name}").select("taxonomy_string").item()
+)
+print(species)
+print(taxonomy_string)
+
+species, taxonomy_string = (
+    df.filter(pl.col("genome_id") == f"{genome_name}").select("species").item(),
+    df.filter(pl.col("genome_id") == f"{genome_name}").select("taxonomy_string").item(),
+)
+
+print(species)
+print(taxonomy_string)
