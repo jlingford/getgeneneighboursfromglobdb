@@ -206,8 +206,8 @@ def parse_arguments() -> argparse.Namespace:
 
     parser.add_argument(
         "-S",
-        "--one_strand",
-        dest="one_strand",
+        "--same_strand",
+        dest="same_strand",
         action="store_true",
         help="Option to only extract genetic neighbourhood from the same strand the gene-of-interest is located on. Default is to extract neighbourhood of both strands [Default: off]",
     )
