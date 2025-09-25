@@ -11,3 +11,4 @@ input/
 constants/__pycache__/
 globdb_index.pkl
 rp24_scratch2/
+logs/
