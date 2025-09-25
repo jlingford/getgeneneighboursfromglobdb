@@ -35,13 +35,11 @@ NIFE_SSU_CODES = [
     "COG1941",  # Coenzyme F420-reducing hydrogenase, gamma subunit (FrhG) (PDB:5ODC)
     "COG3260",  # Ni,Fe-hydrogenase III small subunit (HycG) (PDB:6CFW)
     "COG3894",  # Uncharacterized 2Fe-2S and 4Fe-4S clusters-containing protein, contains DUF4445 domain (PDB:4C1N)
-    "K00205",  # 4Fe-4S ferredoxin
     "K00331",  # NADH-quinone oxidoreductase subunit B [EC:7.1.1.2]
     "K00443",  # coenzyme F420 hydrogenase subunit gamma [EC:1.12.98.1]
     "K05927",  # quinone-reactive Ni/Fe-hydrogenase small subunit [EC:1.12.5.1]
     "K06282",  # hydrogenase small subunit [EC:1.12.99.6]
     "K06441",  # ferredoxin hydrogenase gamma subunit [EC:1.12.7.2]
-    "K11260",  # 4Fe-4S ferredoxin
     "K13380",  # NADH-quinone oxidoreductase subunit B/C/D [EC:7.1.1.2]
     "K14088",  # ech hydrogenase subunit C
     "K14127",  # F420-non-reducing hydrogenase iron-sulfur subunit [EC:1.12.99.- 1.8.98.5 1.8.98.6]
@@ -51,11 +49,18 @@ NIFE_SSU_CODES = [
     "K18007",  # NAD-reducing hydrogenase small subunit [EC:1.12.1.2]
     "K18023",  # membrane-bound hydrogenase subunit mbhJ [EC:1.12.7.2]
     "K23548",  # uptake hydrogenase small subunit [EC:1.12.99.6]
+    "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
+    "PF05187.17",  # Electron transfer flavoprotein-ubiquinone oxidoreductase, 4Fe-4S
+    "PF14691.10",  # Dihydroprymidine dehydrogenase domain II, 4Fe-4S cluster
+    "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
+]
+
+FES_CODES = [
+    "K00205",  # 4Fe-4S ferredoxin
+    "K11260",  # 4Fe-4S ferredoxin
     "PF00037.31",  # 4Fe-4S binding domain
     "PF00142.22",  # 4Fe-4S iron sulfur cluster binding proteins, NifH/frxC family
-    "PF01058.26",  # NADH ubiquinone oxidoreductase, 20 Kd subunit
     "PF01077.26",  # Nitrite and sulphite reductase 4Fe-4S domain
-    "PF05187.17",  # Electron transfer flavoprotein-ubiquinone oxidoreductase, 4Fe-4S
     "PF06902.15",  # Divergent 4Fe-4S mono-cluster
     "PF12797.11",  # 4Fe-4S binding domain
     "PF12798.11",  # 4Fe-4S binding domain
@@ -73,9 +78,7 @@ NIFE_SSU_CODES = [
     "PF13484.10",  # 4Fe-4S double cluster binding domain
     "PF13534.10",  # 4Fe-4S dicluster domain
     "PF13746.10",  # 4Fe-4S dicluster domain
-    "PF14691.10",  # Dihydroprymidine dehydrogenase domain II, 4Fe-4S cluster
     "PF14697.10",  # 4Fe-4S dicluster domain
-    "PF14720.10",  # NiFe/NiFeSe hydrogenase small subunit C-terminal
     "PF17179.8",  # 4Fe-4S dicluster domain
     "PF18009.5",  # 4Fe-4S iron-sulfur cluster binding domain
 ]
@@ -136,8 +139,110 @@ NIFE_GROUP1_PPI_CODES = [
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
 NIFE_GROUP2_PPI_CODES = [
-    "COG2427",  # Uncharacterized conserved protein YjgD, DUF1641 family (YjgD)
-    "PF07849.15",  # Protein of unknown function (DUF1641)
+    "COG0642",  # Signal transduction histidine kinase (BaeS) (PDB:1JOY)
+    "COG0643",  # Chemotaxis protein histidine kinase CheA (CheA) (PDB:1B3Q)
+    "COG2202",  # PAS domain (PAS) (PDB:2MWG)
+    "COG2205",  # K+-sensing histidine kinase KdpD (KdpD) (PDB:2KSF)
+    "COG2427",  # Uncharacterized conserved protein YjgD, DUF1641 family (YjgD) # HucM
+    "COG2461",  # Uncharacterized conserved protein AF0170, contains SAB, hemerythrin HHE, and PAS domains (PDB:2QKP) (PUBMED:18675376)
+    "COG2815",  # PASTA domain, binds beta-lactams (PASTA)
+    "COG2964",  # Predicted transcriptional regulator YheO, contains PAS and DNA-binding HTH domains (YheO)
+    "COG2972",  # Sensor histidine kinase YesM (YesM)
+    "COG3275",  # Sensor histidine kinase, LytS/YehU family (LytS)
+    "COG3290",  # Sensor histidine kinase DipB regulating citrate/malate metabolism (CitA)
+    "COG3829",  # RocR-type transcriptional regulator, contains PAS, AAA-type ATPase, and DNA-binding Fis domains (RocR)
+    "COG3850",  # Signal transduction histidine kinase NarQ, nitrate/nitrite-specific (NarQ)
+    "COG3852",  # Signal transduction histidine kinase NtrB, nitrogen specific (NtrB) (PUBMED:23893111)
+    "COG3920",  # Two-component sensor histidine kinase, HisKA and HATPase domains (PDB:4R39)
+    "COG4191",  # Signal transduction histidine kinase regulating C4-dicarboxylate transport system (PDB:4GCZ)
+    "COG4251",  # Bacteriophytochrome (light-regulated signal transduction histidine kinase) (PDB:2VEA)
+    "COG4564",  # Signal transduction histidine kinase (PDB:2QHK)
+    "COG4585",  # Signal transduction histidine kinase ComP (ComP) (PDB:4GT8)
+    "COG5000",  # Signal transduction histidine kinase NtrY involved in nitrogen fixation and metabolism regulation (NtrY)
+    "COG5002",  # Sensor histidine kinase WalK (WalK) (PDB:4I5S)
+    "COG5788",  # Cyanobacterial/chloroplast protein SipA, regulator of sensor kinase NblS (Hik33), DUF3148 (PF11347) family (SipA)
+    "K00936",  # two-component system, sensor histidine kinase PdtaS [EC:2.7.13.3]
+    "K02476",  # two-component system, CitB family, sensor kinase [EC:2.7.13.3]
+    "K02478",  # two-component system, LytTR family, sensor kinase [EC:2.7.13.3]
+    "K02480",  # two-component system, NarL family, sensor kinase [EC:2.7.13.3]
+    "K02482",  # two-component system, NtrC family, sensor kinase [EC:2.7.13.3]
+    "K02484",  # two-component system, OmpR family, sensor kinase [EC:2.7.13.3]
+    "K02486",  # two-component system, sensor kinase [EC:2.7.13.3]
+    "K02491",  # two-component system, sporulation sensor kinase A [EC:2.7.13.3]
+    "K02668",  # two-component system, NtrC family, sensor histidine kinase PilS [EC:2.7.13.3]
+    "K03407",  # two-component system, chemotaxis family, sensor kinase CheA [EC:2.7.13.3]
+    "K06596",  # chemosensory pili system protein ChpA (sensor histidine kinase/response regulator)
+    "K07636",  # two-component system, OmpR family, phosphate regulon sensor histidine kinase PhoR [EC:2.7.13.3]
+    "K07637",  # two-component system, OmpR family, sensor histidine kinase PhoQ [EC:2.7.13.3]
+    "K07638",  # two-component system, OmpR family, osmolarity sensor histidine kinase EnvZ [EC:2.7.13.3]
+    "K07640",  # two-component system, OmpR family, sensor histidine kinase CpxA [EC:2.7.13.3]
+    "K07642",  # two-component system, OmpR family, sensor histidine kinase BaeS [EC:2.7.13.3]
+    "K07645",  # two-component system, OmpR family, sensor histidine kinase QseC [EC:2.7.13.3]
+    "K07646",  # two-component system, OmpR family, sensor histidine kinase KdpD [EC:2.7.13.3]
+    "K07647",  # two-component system, OmpR family, sensor histidine kinase TorS [EC:2.7.13.3]
+    "K07649",  # two-component system, OmpR family, sensor histidine kinase TctE [EC:2.7.13.3]
+    "K07650",  # two-component system, OmpR family, sensor histidine kinase CssS [EC:2.7.13.3]
+    "K07674",  # two-component system, NarL family, nitrate/nitrite sensor histidine kinase NarQ [EC:2.7.13.3]
+    "K07678",  # two-component system, NarL family, sensor histidine kinase BarA [EC:2.7.13.3]
+    "K07679",  # two-component system, NarL family, sensor histidine kinase EvgS [EC:2.7.13.3]
+    "K07697",  # two-component system, sporulation sensor kinase B [EC:2.7.13.3]
+    "K07698",  # two-component system, sporulation sensor kinase C [EC:2.7.13.3]
+    "K07706",  # two-component system, LytTR family, sensor histidine kinase AgrC [EC:2.7.13.3]
+    "K07708",  # two-component system, NtrC family, nitrogen regulation sensor histidine kinase GlnL [EC:2.7.13.3]
+    "K07709",  # two-component system, NtrC family, sensor histidine kinase HydH [EC:2.7.13.3]
+    "K07710",  # two-component system, NtrC family, sensor histidine kinase AtoS [EC:2.7.13.3]
+    "K07718",  # two-component system, sensor histidine kinase YesM [EC:2.7.13.3]
+    "K07769",  # two-component system, OmpR family, sensor histidine kinase NblS [EC:2.7.13.3]
+    "K07778",  # two-component system, NarL family, sensor histidine kinase DesK [EC:2.7.13.3]
+    "K08082",  # two-component system, LytTR family, sensor histidine kinase AlgZ [EC:2.7.13.3]
+    "K08479",  # two-component system, OmpR family, clock-associated histidine kinase SasA [EC:2.7.13.3]
+    "K10916",  # two-component system, CAI-1 autoinducer sensor kinase/phosphatase CqsS [EC:2.7.13.3 3.1.3.-]
+    "K10942",  # two-component system, sensor histidine kinase FlrB [EC:2.7.13.3]
+    "K11354",  # two-component system, chemotaxis family, sensor kinase Cph1 [EC:2.7.13.3]
+    "K11527",  # two-component system, sensor histidine kinase and response regulator [EC:2.7.13.3]
+    "K11711",  # two-component system, LuxR family, sensor histidine kinase DctS [EC:2.7.13.3]
+    "K13040",  # two-component system, LuxR family, sensor histidine kinase TtrS [EC:2.7.13.3]
+    "K13532",  # two-component system, sporulation sensor kinase D [EC:2.7.13.3]
+    "K13533",  # two-component system, sporulation sensor kinase E [EC:2.7.13.3]
+    "K13587",  # two-component system, cell cycle sensor histidine kinase and response regulator CckA [EC:2.7.13.3]
+    "K13598",  # two-component system, NtrC family, nitrogen regulation sensor histidine kinase NtrY [EC:2.7.13.3]
+    "K14980",  # two-component system, OmpR family, sensor histidine kinase ChvG [EC:2.7.13.3]
+    "K14982",  # two-component system, OmpR family, sensor histidine kinase CiaH [EC:2.7.13.3]
+    "K14986",  # two-component system, LuxR family, sensor kinase FixL [EC:2.7.13.3]
+    "K15011",  # two-component system, sensor histidine kinase RegB [EC:2.7.13.3]
+    "K18072",  # two-component system, OmpR family, sensor kinase ParS [EC:2.7.13.3]
+    "K18345",  # two-component system, OmpR family, sensor histidine kinase VanS [EC:2.7.13.3]
+    "K18350",  # two-component system, OmpR family, sensor histidine kinase VanS [EC:2.7.13.3]
+    "K18986",  # two-component system, OmpR family, sensor kinase Ihk [EC:2.7.13.3]
+    "K19621",  # two-component system, sensor histidine kinase PhcS [EC:2.7.13.3]
+    "K19661",  # two-component system, NtrC family, sensor histidine kinase HupT/HoxJ [EC:2.7.13.3]
+    "K20487",  # two-component system, OmpR family, lantibiotic biosynthesis sensor histidine kinase NisK/SpaK [EC:2.7.13.3]
+    "K20971",  # two-component system, sensor histidine kinase LadS
+    "K20974",  # two-component system, sensor histidine kinase [EC:2.7.13.3]
+    "K20975",  # two-component system, sensor histidine kinase [EC:2.7.13.3]
+    "PF00989.29",  # PAS fold
+    "PF02702.21",  # Osmosensitive K+ channel His kinase sensor domain
+    "PF02895.18",  # Signal transducing histidine kinase, homodimeric domain
+    "PF07310.17",  # PAS domain
+    "PF07536.18",  # HWE histidine kinase
+    "PF07849.15",  # Protein of unknown function (DUF1641) # HucM
+    "PF08348.15",  # YheO-like PAS domain
+    "PF08446.15",  # PAS fold
+    "PF08447.16",  # PAS fold
+    "PF08448.14",  # PAS fold
+    "PF08521.14",  # Two-component sensor kinase N-terminal
+    "PF12860.11",  # PAS fold
+    "PF13188.11",  # PAS domain
+    "PF13426.11",  # PAS domain
+    "PF13596.10",  # PAS domain
+    "PF14598.10",  # PAS domain
+    "PF14827.10",  # Double sensory domain of two-component sensor kinase
+    "PF16524.9",  # Periplasmic domain of Sensor histidine kinase RisS
+    "PF16927.9",  # N-terminal 7TM region of histidine kinase
+    "PF18095.5",  # UPF0242 C-terminal PAS-like domain
+    "PF21160.1",  # Serine/threonine protein kinase-like, C-terminal PASTA-like domain
+    "PF21370.1",  # Cyclic-di-AMP phosphodiesterase GdpP, PAS domain
+    "PF21815.1",  # PdeA-like PAS domain
 ]
 
 # WARN: hardcoded HMM annotation codes for NiFe group 1 partners
