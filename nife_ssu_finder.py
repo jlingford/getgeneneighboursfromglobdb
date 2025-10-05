@@ -1069,6 +1069,7 @@ def pairwise_fasta_generation(
 
     # Read all sequences into a list (records)
     records = list(SeqIO.parse(input_fasta_set, "fasta"))
+    records = sorted(records, key=lambda r: r.name.split("___")[1] != target_id)
 
     # generate fasta pairs using itertools
     pairs = combinations_with_replacement(records, 2)
@@ -1101,7 +1102,7 @@ def pairwise_fasta_generation(
                 Path(output_dir)
                 / target_id
                 / f"Chai1_fasta_pairs-{set_num}-{target_id}"
-                / f"{stemname}_AFformat_Chai1.faa"
+                / f"{stemname}_AFformat_Chai1.fasta"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             SeqIO.write(chai_records, outpath, "fasta")
@@ -1122,7 +1123,7 @@ def pairwise_fasta_generation(
                 Path(output_dir)
                 / target_id
                 / f"Boltz2_fasta_pairs-{set_num}-{target_id}"
-                / f"{stemname}_AFformat_Boltz2.faa"
+                / f"{stemname}_AFformat_Boltz2.fasta"
             )
             outpath.parent.mkdir(exist_ok=True, parents=True)
             SeqIO.write(boltz_records, outpath, "fasta")
