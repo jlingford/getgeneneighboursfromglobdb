@@ -1071,7 +1071,7 @@ def pairwise_fasta_generation(
 
     # Read all sequences into a list (records)
     records = list(SeqIO.parse(input_fasta_set, "fasta"))
-    records = sorted(records, key=lambda r: r.name.split("___")[1] != target_id)
+    # records = sorted(records, key=lambda r: r.name.split("___")[1] != target_id)
 
     # generate fasta pairs using itertools
     pairs = combinations_with_replacement(records, 2)
@@ -1084,6 +1084,11 @@ def pairwise_fasta_generation(
         genome = rec1.name.split("___")[0]
         gene1 = rec1.name.split("___")[1]
         gene2 = rec2.name.split("___")[1]
+
+        # ensure target_id is always listed first in the output
+        if rec2.name == target_id and rec1.name != target_id:
+            gene1, gene2 = gene2, gene1
+            rec1, rec2 = rec2, rec1
 
         # Build output file name
         faaname = f"{genome}___{gene1}-{gene2}.faa"
