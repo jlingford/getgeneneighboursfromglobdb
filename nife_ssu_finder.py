@@ -747,8 +747,10 @@ def extract_nife_ssu(
                 if outpath in file.parents:
                     continue
                 file_name = file.stem.split("_AFformat_")[0]
+                # copy file to new name
+                new_file_name = file.stem + "_NiFeLSUSSU" + file.suffix
                 if file.is_file() and file_name in lsu_ssu_file_names:
-                    shutil.copy2(file, outpath)
+                    shutil.copy2(file, outpath / new_file_name)
         else:
             # write NiFe_LSU_SSU fasta file from scratch if pairwise_set options are not set
             outpath2 = (
