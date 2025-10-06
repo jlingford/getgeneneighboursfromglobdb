@@ -1122,7 +1122,7 @@ def pairwise_fasta_generation(
                     SeqRecord(
                         seq=rec.seq,
                         name=rec.id,
-                        id=f"{chain_id}|protein|MSAPATH/{stemname}.a3m",
+                        id=f"{chain_id}|protein|./msas/{rec.name.split('___')[0]}___{rec.name.split('___')[1]}.a3m",
                         description="",
                     )
                 )
